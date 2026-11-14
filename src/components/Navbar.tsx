@@ -125,33 +125,33 @@ export function Navbar({ searchQuery, onSearchChange, searchResults = [], onSele
           </div>
 
           {/* Navigation Action Buttons */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             
-            {/* Warranty Status Link */}
+            {/* Warranty Status Link - Visible on ALL devices */}
             <Link
               href="/warranty"
-              className="hidden lg:flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition"
               title="Verify or Register Digital Warranty"
             >
-              <ShieldCheck className="w-4 h-4 text-emerald-500" />
-              <span>Warranty</span>
+              <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
+              <span className="hidden sm:inline">Warranty</span>
             </Link>
 
             {/* Direct Quotation Link */}
             <Link
               href="/quotation"
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition"
               title="View & Share Quotation"
             >
-              <FileText className="w-4 h-4 text-red-500" />
-              <span>Quotation</span>
+              <FileText className="w-4 h-4 text-red-500 shrink-0" />
+              <span className="hidden sm:inline">Quotation</span>
             </Link>
 
             {/* Dark & Light Theme Switcher */}
             <button
               onClick={toggleTheme}
               aria-label="Toggle theme"
-              className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+              className="p-2 sm:p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
             >
               {theme === "dark" ? (
                 <Sun className="w-4 h-4 text-amber-400" />
@@ -163,9 +163,9 @@ export function Navbar({ searchQuery, onSearchChange, searchResults = [], onSele
             {/* Enquiry Cart Trigger Button */}
             <button
               onClick={() => setIsCartDrawerOpen(true)}
-              className="relative flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-lg shadow-red-600/25 active:scale-95 transition"
+              className="relative flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-lg shadow-red-600/25 active:scale-95 transition"
             >
-              <ShoppingBag className="w-4 h-4" />
+              <ShoppingBag className="w-4 h-4 shrink-0" />
               <span className="hidden sm:inline">Enquiries</span>
               {totalItems > 0 && (
                 <span className="flex items-center justify-center min-w-5 h-5 px-1.5 text-[10px] font-black bg-white text-red-600 rounded-full">

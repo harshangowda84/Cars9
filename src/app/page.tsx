@@ -378,15 +378,19 @@ function HomeContent() {
                 </div>
               </div>
 
-              <div className="p-5 rounded-3xl bg-white dark:bg-[#0f1523] border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-3.5">
-                <div className="w-11 h-11 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+              <Link
+                href="/warranty"
+                className="p-5 rounded-3xl bg-white dark:bg-[#0f1523] border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-3.5 hover:border-emerald-500/50 transition group"
+                title="Check Digital Warranty Certificate"
+              >
+                <div className="w-11 h-11 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
                   <Award className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="block text-xs font-extrabold text-slate-900 dark:text-white">Warranty Protected</span>
-                  <span className="text-[11px] text-slate-400 font-mono">Zero Factory Void</span>
+                  <span className="block text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-500 transition-colors">Warranty Protected</span>
+                  <span className="text-[11px] text-slate-400 font-mono">Verify Certificate →</span>
                 </div>
-              </div>
+              </Link>
 
               <div className="p-5 rounded-3xl bg-white dark:bg-[#0f1523] border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-3.5">
                 <div className="w-11 h-11 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
