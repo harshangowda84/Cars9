@@ -131,9 +131,8 @@ export default function AdminPortalPage() {
   const [authError, setAuthError] = useState("");
 
   // Tab State
-  const [activeTab, setActiveTab] = useState<
-    "banners" | "inventory" | "brands" | "enquiries" | "warranties" | "plp_settings" | "pdp_settings" | "security" | "uploader"
-  >("banners");
+  type AdminTab = "banners" | "inventory" | "brands" | "enquiries" | "warranties" | "plp_settings" | "pdp_settings" | "security" | "uploader";
+  const [activeTab, setActiveTab] = useState<AdminTab>("banners");
 
   // Core Data States
   const [banners, setBanners] = useState<Banner[]>([]);
@@ -1444,6 +1443,13 @@ export default function AdminPortalPage() {
 
     setPricingItems(initItems);
     setQuoteDiscount(enquiry.discountAmount || 0);
+
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+      setTimeout(() => {
+        const desk = document.getElementById("quotation-pricing-desk");
+        desk?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+    }
   };
 
   const quoteSubtotal = useMemo(() => {
@@ -1952,200 +1958,284 @@ Thank you for choosing Cars9 Studio!`;
   return (
     <div className={`min-h-screen ${bgClass} flex flex-col font-sans transition-colors duration-200`}>
       
-      {/* Top Header Bar */}
-      <header className={`sticky top-0 z-40 backdrop-blur-md border-b px-4 sm:px-6 py-3.5 flex items-center justify-between gap-4 ${
-        isDark ? "bg-slate-900/90 border-slate-800" : "bg-white/90 border-slate-200 shadow-sm"
+      {/* Top Header Bar: Responsive Two-Tier Architecture */}
+      <header className={`sticky top-0 z-40 backdrop-blur-md border-b shadow-sm ${
+        isDark ? "bg-slate-900/95 border-slate-800" : "bg-white/95 border-slate-200"
       }`}>
-        <div className="flex items-center gap-3">
-          <Cars9Logo size="sm" href="/" />
-          
-          {authRole === "staff" ? (
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
-              <Zap className="w-3 h-3" />
-              <span>Staff Easy Access</span>
-            </span>
-          ) : (
-            <span className="hidden md:inline-block px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-red-600/10 text-red-600 dark:text-red-400 border border-red-500/30">
-              Master Admin Control
-            </span>
-          )}
+        {/* TIER 1: Brand & Identity on Left | Quick Action Controls on Right */}
+        <div className="px-3.5 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-2 border-b border-slate-200/60 dark:border-slate-800/60">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <Cars9Logo size="sm" href="/" />
+            
+            {authRole === "staff" ? (
+              <span className="px-2 sm:px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                <Zap className="w-3 h-3" />
+                <span>Staff Access</span>
+              </span>
+            ) : (
+              <span className="px-2 sm:px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-red-600/10 text-red-600 dark:text-red-400 border border-red-500/30 flex items-center gap-1">
+                <Shield className="w-3 h-3" />
+                <span className="hidden sm:inline">Master Admin</span>
+                <span className="sm:hidden">Admin</span>
+              </span>
+            )}
+          </div>
+
+          {/* Quick Action Controls */}
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            {/* Switch to Full Admin if currently in Staff Mode */}
+            {authRole === "staff" && (
+              <button
+                onClick={switchToFullAdmin}
+                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border border-red-500/30 text-red-500 hover:bg-red-500/10 text-xs font-bold transition"
+                title="Switch to Master Admin Portal"
+              >
+                <Shield className="w-3.5 h-3.5" />
+                <span className="hidden md:inline">Admin Login</span>
+              </button>
+            )}
+
+            {/* Dark / Light Toggle */}
+            <button
+              onClick={toggleAdminTheme}
+              className={`p-1.5 sm:p-2 rounded-xl border transition ${
+                isDark ? "border-slate-800 hover:bg-slate-800 text-amber-400" : "border-slate-200 hover:bg-slate-100 text-slate-700"
+              }`}
+              title="Toggle Dark / Light Theme"
+              aria-label="Toggle Theme"
+            >
+              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+
+            {/* Refresh Data */}
+            <button
+              onClick={fetchAllData}
+              className={`p-1.5 sm:p-2 rounded-xl border transition ${
+                isDark ? "border-slate-800 hover:bg-slate-800 text-slate-400" : "border-slate-200 hover:bg-slate-100 text-slate-600"
+              }`}
+              title="Refresh All Data"
+              aria-label="Refresh Data"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+            </button>
+
+            {/* View Storefront Link */}
+            <Link
+              href="/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border text-xs font-bold transition shadow-sm ${
+                isDark 
+                  ? "bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-200" 
+                  : "bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-800"
+              }`}
+              title="Open Storefront in New Tab"
+            >
+              <ExternalLink className="w-3.5 h-3.5 text-red-500 shrink-0" />
+              <span className="hidden sm:inline">Storefront</span>
+            </Link>
+
+            {/* Logout */}
+            <button
+              onClick={handleLogout}
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border text-xs font-bold transition opacity-80 hover:opacity-100 ${
+                isDark ? "border-slate-700 text-slate-300 hover:bg-slate-800" : "border-slate-300 text-slate-700 hover:bg-slate-100"
+              }`}
+              title="Log out"
+            >
+              <LogOut className="w-3.5 h-3.5 shrink-0" />
+              <span className="hidden sm:inline">{authRole === "staff" ? "Exit" : "Logout"}</span>
+            </button>
+          </div>
         </div>
 
-        {/* Tab Switcher: Filtered based on Role */}
-        <div className={`flex items-center gap-1 p-1 rounded-2xl border text-xs overflow-x-auto ${
-          isDark ? "bg-slate-800 border-slate-700" : "bg-slate-100 border-slate-200"
-        }`}>
-          {/* Tabs Available in Full Admin Mode */}
-          {authRole === "admin" && (
-            <>
+        {/* TIER 2: Dedicated Navigation Tabs (Full Width on Mobile & Desktop) */}
+        <div className="px-3 sm:px-6 py-2">
+          {/* For STAFF Role: Exactly 2 tabs rendered in a clean, spacious 2-column segmented control */}
+          {authRole === "staff" ? (
+            <div className={`grid grid-cols-2 max-w-md mx-auto p-1 rounded-2xl border text-xs font-bold ${
+              isDark ? "bg-slate-800/80 border-slate-700" : "bg-slate-100 border-slate-200"
+            }`}>
               <button
-                onClick={() => setActiveTab("banners")}
-                className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
-                  activeTab === "banners" ? "bg-red-600 text-white shadow-md" : "opacity-70 hover:opacity-100"
+                onClick={() => setActiveTab("enquiries")}
+                className={`py-2 px-3 rounded-xl font-bold transition flex items-center justify-center gap-2 whitespace-nowrap relative ${
+                  activeTab === "enquiries" ? "bg-emerald-600 text-white shadow-md" : "opacity-70 hover:opacity-100"
                 }`}
               >
-                <Sliders className="w-3.5 h-3.5" />
-                <span>Hero Banners</span>
-              </button>
-
-              <button
-                onClick={() => setActiveTab("inventory")}
-                className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
-                  activeTab === "inventory" ? "bg-red-600 text-white shadow-md" : "opacity-70 hover:opacity-100"
-                }`}
-              >
-                <Package className="w-3.5 h-3.5" />
-                <span>Catalog & Inventory</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setActiveTab("brands");
-                  if (!selectedBrandForModels && brands.length > 0) {
-                    setSelectedBrandForModels(brands[0]);
-                  }
-                }}
-                className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
-                  activeTab === "brands" ? "bg-red-600 text-white shadow-md" : "opacity-70 hover:opacity-100"
-                }`}
-              >
-                <Car className="w-3.5 h-3.5" />
-                <span>Brands & Models</span>
-              </button>
-            </>
-          )}
-
-          {/* TAB: ENQUIRIES (Always visible to both Admin and Staff Easy Access) */}
-          <button
-            onClick={() => setActiveTab("enquiries")}
-            className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 whitespace-nowrap relative ${
-              activeTab === "enquiries" ? "bg-red-600 text-white shadow-md" : "opacity-70 hover:opacity-100"
-            }`}
-          >
-            <Inbox className="w-3.5 h-3.5" />
-            <span>Enquiries</span>
-            {enquiries.filter((q) => !q.isPriced).length > 0 && (
-              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-            )}
-          </button>
-
-          {/* TAB: WARRANTY MANAGER (Always visible to both Admin and Staff Easy Access) */}
-          <button
-            onClick={() => setActiveTab("warranties")}
-            className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
-              activeTab === "warranties" ? "bg-red-600 text-white shadow-md" : "opacity-70 hover:opacity-100"
-            }`}
-          >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Warranty Manager</span>
-          </button>
-
-          {/* Additional Admin Only Tabs */}
-          {authRole === "admin" && (
-            <>
-              <button
-                onClick={() => setActiveTab("plp_settings")}
-                className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
-                  activeTab === "plp_settings" ? "bg-red-600 text-white shadow-md" : "opacity-70 hover:opacity-100"
-                }`}
-              >
-                <LayoutGrid className="w-3.5 h-3.5" />
-                <span>PLP Controls</span>
-              </button>
-
-              <button
-                onClick={() => setActiveTab("pdp_settings")}
-                className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
-                  activeTab === "pdp_settings" ? "bg-red-600 text-white shadow-md" : "opacity-70 hover:opacity-100"
-                }`}
-              >
-                <FileCode className="w-3.5 h-3.5" />
-                <span>PDP Controls</span>
-              </button>
-
-              <button
-                onClick={() => setActiveTab("security")}
-                className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
-                  activeTab === "security" ? "bg-red-600 text-white shadow-md" : "opacity-70 hover:opacity-100"
-                }`}
-              >
-                <KeyRound className="w-3.5 h-3.5" />
-                <span>Passwords</span>
-              </button>
-
-              <button
-                onClick={() => setActiveTab("uploader")}
-                className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
-                  activeTab === "uploader" ? "bg-red-600 text-white shadow-md" : "opacity-70 hover:opacity-100"
-                }`}
-              >
-                <UploadCloud className="w-3.5 h-3.5" />
-                <span>Telegram CDN</span>
-                {tgStatus?.ok && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <Inbox className="w-4 h-4" />
+                <span>Enquiries</span>
+                {enquiries.filter((q) => !q.isPriced).length > 0 && (
+                  <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-400 text-slate-950 font-black animate-pulse">
+                    {enquiries.filter((q) => !q.isPriced).length}
+                  </span>
                 )}
               </button>
-            </>
+
+              <button
+                onClick={() => setActiveTab("warranties")}
+                className={`py-2 px-3 rounded-xl font-bold transition flex items-center justify-center gap-2 whitespace-nowrap ${
+                  activeTab === "warranties" ? "bg-emerald-600 text-white shadow-md" : "opacity-70 hover:opacity-100"
+                }`}
+              >
+                <ShieldCheck className="w-4 h-4" />
+                <span>Warranty Manager</span>
+              </button>
+            </div>
+          ) : (
+            /* For MASTER ADMIN Role: Full 9 Tabs with Mobile Quick Selector + Touch Pill Slider */
+            <div className="flex flex-col gap-2">
+              {/* Mobile Quick Dropdown Selector (< md) for 1-tap direct tab switching */}
+              <div className="md:hidden flex items-center gap-2">
+                <div className="relative flex-1">
+                  <select
+                    value={activeTab}
+                    onChange={(e) => {
+                      const newTab = e.target.value as AdminTab;
+                      setActiveTab(newTab);
+                      if (newTab === "brands" && !selectedBrandForModels && brands.length > 0) {
+                        setSelectedBrandForModels(brands[0]);
+                      }
+                    }}
+                    className={`w-full py-2 pl-3.5 pr-8 rounded-xl border text-xs font-bold appearance-none ${
+                      isDark
+                        ? "bg-slate-800 border-slate-700 text-white"
+                        : "bg-slate-100 border-slate-300 text-slate-900"
+                    }`}
+                  >
+                    <option value="banners">Hero Banners</option>
+                    <option value="inventory">Catalog & Inventory</option>
+                    <option value="brands">Brands & Models Architecture</option>
+                    <option value="enquiries">
+                      Enquiries & Quotations {enquiries.filter((q) => !q.isPriced).length > 0 ? `(${enquiries.filter((q) => !q.isPriced).length} Pending)` : ""}
+                    </option>
+                    <option value="warranties">Warranty Management</option>
+                    <option value="plp_settings">PLP Controls</option>
+                    <option value="pdp_settings">PDP Controls</option>
+                    <option value="security">Security & Passwords</option>
+                    <option value="uploader">Telegram CDN Settings</option>
+                  </select>
+                  <ChevronDown className="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none opacity-60" />
+                </div>
+              </div>
+
+              {/* Edge-to-Edge Touch-Friendly Tabs Slider / Pill Bar */}
+              <div className={`flex items-center gap-1.5 p-1 rounded-2xl border text-xs overflow-x-auto scrollbar-none no-scrollbar ${
+                isDark ? "bg-slate-800/80 border-slate-700" : "bg-slate-100 border-slate-200"
+              }`}>
+                {/* 1. Hero Banners */}
+                <button
+                  onClick={() => setActiveTab("banners")}
+                  className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
+                    activeTab === "banners" ? "bg-red-600 text-white shadow-md" : "opacity-70 hover:opacity-100"
+                  }`}
+                >
+                  <Sliders className="w-3.5 h-3.5" />
+                  <span>Hero Banners</span>
+                </button>
+
+                {/* 2. Catalog & Inventory */}
+                <button
+                  onClick={() => setActiveTab("inventory")}
+                  className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
+                    activeTab === "inventory" ? "bg-red-600 text-white shadow-md" : "opacity-70 hover:opacity-100"
+                  }`}
+                >
+                  <Package className="w-3.5 h-3.5" />
+                  <span>Catalog & Inventory</span>
+                </button>
+
+                {/* 3. Brands & Models */}
+                <button
+                  onClick={() => {
+                    setActiveTab("brands");
+                    if (!selectedBrandForModels && brands.length > 0) {
+                      setSelectedBrandForModels(brands[0]);
+                    }
+                  }}
+                  className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
+                    activeTab === "brands" ? "bg-red-600 text-white shadow-md" : "opacity-70 hover:opacity-100"
+                  }`}
+                >
+                  <Car className="w-3.5 h-3.5" />
+                  <span>Brands & Models</span>
+                </button>
+
+                {/* 4. Enquiries */}
+                <button
+                  onClick={() => setActiveTab("enquiries")}
+                  className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 whitespace-nowrap relative ${
+                    activeTab === "enquiries" ? "bg-red-600 text-white shadow-md" : "opacity-70 hover:opacity-100"
+                  }`}
+                >
+                  <Inbox className="w-3.5 h-3.5" />
+                  <span>Enquiries</span>
+                  {enquiries.filter((q) => !q.isPriced).length > 0 && (
+                    <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-400 text-slate-950 font-black animate-pulse">
+                      {enquiries.filter((q) => !q.isPriced).length}
+                    </span>
+                  )}
+                </button>
+
+                {/* 5. Warranty Manager */}
+                <button
+                  onClick={() => setActiveTab("warranties")}
+                  className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
+                    activeTab === "warranties" ? "bg-red-600 text-white shadow-md" : "opacity-70 hover:opacity-100"
+                  }`}
+                >
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>Warranty Manager</span>
+                </button>
+
+                {/* 6. PLP Controls */}
+                <button
+                  onClick={() => setActiveTab("plp_settings")}
+                  className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
+                    activeTab === "plp_settings" ? "bg-red-600 text-white shadow-md" : "opacity-70 hover:opacity-100"
+                  }`}
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  <span>PLP Controls</span>
+                </button>
+
+                {/* 7. PDP Controls */}
+                <button
+                  onClick={() => setActiveTab("pdp_settings")}
+                  className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
+                    activeTab === "pdp_settings" ? "bg-red-600 text-white shadow-md" : "opacity-70 hover:opacity-100"
+                  }`}
+                >
+                  <FileCode className="w-3.5 h-3.5" />
+                  <span>PDP Controls</span>
+                </button>
+
+                {/* 8. Passwords */}
+                <button
+                  onClick={() => setActiveTab("security")}
+                  className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
+                    activeTab === "security" ? "bg-red-600 text-white shadow-md" : "opacity-70 hover:opacity-100"
+                  }`}
+                >
+                  <KeyRound className="w-3.5 h-3.5" />
+                  <span>Passwords</span>
+                </button>
+
+                {/* 9. Telegram CDN */}
+                <button
+                  onClick={() => setActiveTab("uploader")}
+                  className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
+                    activeTab === "uploader" ? "bg-red-600 text-white shadow-md" : "opacity-70 hover:opacity-100"
+                  }`}
+                >
+                  <UploadCloud className="w-3.5 h-3.5" />
+                  <span>Telegram CDN</span>
+                  {tgStatus?.ok && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  )}
+                </button>
+              </div>
+            </div>
           )}
-        </div>
-
-        {/* Action Controls & Navigation */}
-        <div className="flex items-center gap-2">
-          {/* Switch to Full Admin if currently in Staff Mode */}
-          {authRole === "staff" && (
-            <button
-              onClick={switchToFullAdmin}
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-red-500/30 text-red-500 hover:bg-red-500/10 text-xs font-bold transition"
-            >
-              <Shield className="w-3.5 h-3.5" />
-              <span>Full Admin Portal</span>
-            </button>
-          )}
-
-          {/* Dark / Light Toggle */}
-          <button
-            onClick={toggleAdminTheme}
-            className={`p-2 rounded-xl border transition ${
-              isDark ? "border-slate-800 hover:bg-slate-800 text-amber-400" : "border-slate-200 hover:bg-slate-100 text-slate-700"
-            }`}
-            title="Toggle Dark / Light Theme"
-          >
-            {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </button>
-
-          <button
-            onClick={fetchAllData}
-            className={`p-2 rounded-xl border transition ${
-              isDark ? "border-slate-800 hover:bg-slate-800 text-slate-400" : "border-slate-200 hover:bg-slate-100 text-slate-600"
-            }`}
-            title="Refresh All Data"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-          </button>
-
-          <Link
-            href="/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition shadow-sm ${
-              isDark 
-                ? "bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-200" 
-                : "bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-800"
-            }`}
-            title="Open Storefront in New Tab"
-          >
-            <ExternalLink className="w-3.5 h-3.5 text-red-500" />
-            <span className="hidden sm:inline">View Storefront</span>
-          </Link>
-
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-700 opacity-70 hover:opacity-100 text-xs font-bold transition"
-            title="Log out"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{authRole === "staff" ? "Exit Staff" : "Logout"}</span>
-          </button>
         </div>
       </header>
 
@@ -2157,7 +2247,7 @@ Thank you for choosing Cars9 Studio!`;
         {/* ================================================================= */}
         {activeTab === "banners" && authRole === "admin" && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h2 className="text-xl font-bold">Homepage Hero Banners (Auto-Carousel)</h2>
                 <p className="text-xs opacity-60 mt-0.5">
@@ -2179,7 +2269,7 @@ Thank you for choosing Cars9 Studio!`;
                     sortOrder: banners.length + 1,
                   })
                 }
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md transition"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md transition self-start sm:self-auto shrink-0"
               >
                 <Plus className="w-4 h-4" />
                 <span>Add Hero Banner</span>
@@ -2260,8 +2350,8 @@ Thank you for choosing Cars9 Studio!`;
 
             {/* Banner Edit Modal */}
             {editingBanner && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-                <div className={`${cardClass} border rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-4`}>
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in overflow-y-auto">
+                <div className={`${cardClass} border rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-4 my-auto max-h-[90vh] overflow-y-auto`}>
                   <div className="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
                     <h3 className="font-bold text-base">
                       {editingBanner.id ? "Edit Hero Banner" : "New Hero Banner"}
@@ -2454,10 +2544,10 @@ Thank you for choosing Cars9 Studio!`;
             {catalogSubTab === "active" ? (
               /* Inventory Table with Fast Filters */
               <div className={`${cardClass} border rounded-3xl p-5 space-y-4`}>
-                <div className={`flex flex-wrap items-center justify-between gap-3 pb-3 border-b ${
+                <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b ${
                   isDark ? "border-slate-800" : "border-slate-200"
                 }`}>
-                  <div className="relative flex-1 min-w-[220px]">
+                  <div className="relative flex-1 w-full sm:min-w-[220px]">
                     <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 opacity-50" />
                     <input
                       type="text"
@@ -2468,7 +2558,7 @@ Thank you for choosing Cars9 Studio!`;
                     />
                   </div>
 
-                  <div className="flex items-center gap-3 text-xs font-mono">
+                  <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3 text-xs font-mono w-full sm:w-auto">
                     <select
                       value={selectedBrandFilter || "all"}
                       onChange={(e) => setSelectedBrandFilter(e.target.value === "all" ? null : e.target.value)}
@@ -2496,7 +2586,7 @@ Thank you for choosing Cars9 Studio!`;
 
                 {/* Table */}
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
+                  <table className="w-full text-left text-xs min-w-[720px]">
                     <thead>
                       <tr className={`border-b font-mono uppercase text-[10px] tracking-wider ${
                         isDark ? "border-slate-800 text-slate-400" : "border-slate-200 text-slate-600 bg-slate-50/60"
@@ -2715,10 +2805,10 @@ Thank you for choosing Cars9 Studio!`;
                 </div>
 
                 {/* Search & Filters for Recycle Bin */}
-                <div className={`flex flex-wrap items-center justify-between gap-3 pb-3 border-b ${
+                <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b ${
                   isDark ? "border-slate-800" : "border-slate-200"
                 }`}>
-                  <div className="relative flex-1 min-w-[220px]">
+                  <div className="relative flex-1 w-full sm:min-w-[220px]">
                     <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 opacity-50" />
                     <input
                       type="text"
@@ -2729,7 +2819,7 @@ Thank you for choosing Cars9 Studio!`;
                     />
                   </div>
 
-                  <div className="flex items-center gap-3 text-xs font-mono">
+                  <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3 text-xs font-mono w-full sm:w-auto">
                     <select
                       value={recycleBrandFilter || "all"}
                       onChange={(e) => setRecycleBrandFilter(e.target.value === "all" ? null : e.target.value)}
@@ -2803,7 +2893,7 @@ Thank you for choosing Cars9 Studio!`;
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
+                    <table className="w-full text-left text-xs min-w-[720px]">
                       <thead>
                         <tr className={`border-b font-mono uppercase text-[10px] tracking-wider ${
                           isDark
@@ -3384,7 +3474,7 @@ Thank you for choosing Cars9 Studio!`;
         {/* ================================================================= */}
         {activeTab === "enquiries" && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h2 className="text-xl font-bold">Customer Enquiries & Quotation Desk</h2>
                 <p className="text-xs opacity-60 mt-0.5">
@@ -3449,7 +3539,7 @@ Thank you for choosing Cars9 Studio!`;
               </div>
 
               {/* Quotation Pricing Desk */}
-              <div className={`lg:col-span-7 ${cardClass} border rounded-3xl p-6 sm:p-7 space-y-6`}>
+              <div id="quotation-pricing-desk" className={`lg:col-span-7 ${cardClass} border rounded-3xl p-5 sm:p-7 space-y-6 scroll-mt-28`}>
                 {selectedEnquiry ? (
                   <div className="space-y-6">
                     
@@ -3590,7 +3680,7 @@ Thank you for choosing Cars9 Studio!`;
                         )}
                       </button>
 
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <button
                           onClick={handleShareQuoteWhatsApp}
                           className="py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-2"
@@ -3647,8 +3737,8 @@ Thank you for choosing Cars9 Studio!`;
 
             {/* Warranties Table */}
             <div className={`${cardClass} border rounded-3xl p-5 space-y-4`}>
-              <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
-                <div className="relative flex-1 max-w-md">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
+                <div className="relative flex-1 w-full max-w-md">
                   <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 opacity-50" />
                   <input
                     type="text"
@@ -3659,13 +3749,13 @@ Thank you for choosing Cars9 Studio!`;
                   />
                 </div>
 
-                <div className="text-xs font-mono opacity-70">
+                <div className="text-xs font-mono opacity-70 shrink-0">
                   Total Active: {warranties.length} Warranties
                 </div>
               </div>
 
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
+                <table className="w-full text-left text-xs min-w-[680px]">
                   <thead>
                     <tr className="border-b border-slate-200 dark:border-slate-800 opacity-60 font-mono uppercase text-[10px] tracking-wider">
                       <th className="py-2.5 px-3">Cert ID</th>
@@ -3711,7 +3801,7 @@ Thank you for choosing Cars9 Studio!`;
             {/* REGISTER NEW WARRANTY MODAL */}
             {showRegisterWarrantyModal && (
               <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in overflow-y-auto">
-                <div className={`${cardClass} border rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl space-y-4 my-8`}>
+                <div className={`${cardClass} border rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl space-y-4 my-auto max-h-[90vh] overflow-y-auto`}>
                   <div className="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
                     <div>
                       <h3 className="font-bold text-base">Issue & Register Digital Warranty</h3>
@@ -3879,10 +3969,10 @@ Thank you for choosing Cars9 Studio!`;
             </div>
 
             {/* Sub-Tab Navigation: Active Vehicles vs Vehicle Recycle Bin */}
-            <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
+            <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 overflow-x-auto scrollbar-none no-scrollbar">
               <button
                 onClick={() => setBrandSubTab("active")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition shrink-0 whitespace-nowrap ${
                   brandSubTab === "active"
                     ? "bg-red-600 text-white shadow-md"
                     : `${cardClass} border hover:border-slate-400 dark:hover:border-slate-700 opacity-80 hover:opacity-100`
@@ -3899,7 +3989,7 @@ Thank you for choosing Cars9 Studio!`;
 
               <button
                 onClick={() => setBrandSubTab("recycle_bin")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition shrink-0 whitespace-nowrap ${
                   brandSubTab === "recycle_bin"
                     ? "bg-red-600 text-white shadow-md"
                     : `${cardClass} border hover:border-slate-400 dark:hover:border-slate-700 opacity-80 hover:opacity-100`
@@ -3981,7 +4071,14 @@ Thank you for choosing Cars9 Studio!`;
                           return (
                             <div
                               key={b.id}
-                              onClick={() => setSelectedBrandForModels(b)}
+                              onClick={() => {
+                                setSelectedBrandForModels(b);
+                                if (typeof window !== "undefined" && window.innerWidth < 1024) {
+                                  setTimeout(() => {
+                                    document.getElementById("brand-models-view")?.scrollIntoView({ behavior: "smooth" });
+                                  }, 100);
+                                }
+                              }}
                               className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-4 group ${
                                 isSelected
                                   ? "bg-red-600/10 border-red-500 shadow-md ring-1 ring-red-500"
@@ -4067,7 +4164,7 @@ Thank you for choosing Cars9 Studio!`;
                   </div>
 
                   {/* Right Column: Models within Selected Brand */}
-                  <div className="lg:col-span-7 space-y-4">
+                  <div id="brand-models-view" className="lg:col-span-7 space-y-4 scroll-mt-28">
                     {(() => {
                       const curBrand =
                         (selectedBrandForModels && activeBrands.find((b) => b.id === selectedBrandForModels.id)) ||
@@ -4435,8 +4532,8 @@ Thank you for choosing Cars9 Studio!`;
 
             {/* MODAL: ADD BRAND */}
             {showAddBrandModal && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in">
-                <div className={`${cardClass} border rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl`}>
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in overflow-y-auto">
+                <div className={`${cardClass} border rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl my-auto max-h-[90vh] overflow-y-auto`}>
                   <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
                     <h3 className="font-bold text-base flex items-center gap-2">
                       <Car className="w-4 h-4 text-red-500" />
@@ -4535,8 +4632,8 @@ Thank you for choosing Cars9 Studio!`;
 
             {/* MODAL: ADD MODEL */}
             {showAddModelModal && selectedBrandForModels && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in">
-                <div className={`${cardClass} border rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-5 shadow-2xl`}>
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in overflow-y-auto">
+                <div className={`${cardClass} border rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-5 shadow-2xl my-auto max-h-[90vh] overflow-y-auto`}>
                   <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
                     <div>
                       <span className="text-[10px] font-mono text-red-500 font-bold uppercase">
@@ -4642,8 +4739,8 @@ Thank you for choosing Cars9 Studio!`;
 
             {/* MODAL: EDIT BRAND LOGO */}
             {editingBrandLogo && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in">
-                <div className={`${cardClass} border rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl`}>
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in overflow-y-auto">
+                <div className={`${cardClass} border rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl my-auto max-h-[90vh] overflow-y-auto`}>
                   <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
                     <h3 className="font-bold text-base flex items-center gap-2">
                       <ImageIcon className="w-4 h-4 text-red-500" />
@@ -4724,8 +4821,8 @@ Thank you for choosing Cars9 Studio!`;
 
             {/* MODAL: EDIT MODEL PHOTO */}
             {editingModelPhoto && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in">
-                <div className={`${cardClass} border rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-5 shadow-2xl`}>
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in overflow-y-auto">
+                <div className={`${cardClass} border rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-5 shadow-2xl my-auto max-h-[90vh] overflow-y-auto`}>
                   <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
                     <div>
                       <span className="text-[10px] font-mono text-red-500 font-bold uppercase">
@@ -4898,7 +4995,7 @@ Thank you for choosing Cars9 Studio!`;
                     <Car className="w-4 h-4 text-red-500" />
                     <span>Vehicle Cascade Configurator Dock</span>
                   </h4>
-                  <p className="text-xs opacity-60">Displays Make $\rightarrow$ Model $\rightarrow$ Year cascading dock below hero.</p>
+                  <p className="text-xs opacity-60">Displays Make → Model → Year cascading dock below hero.</p>
                 </div>
                 <button
                   onClick={() => updateSetting("plp_showVehicleCascade", !settings.plp_showVehicleCascade)}
