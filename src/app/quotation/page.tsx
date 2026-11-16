@@ -112,6 +112,20 @@ function QuotationContent() {
     }
   }, [cartItems, vehicleBrand]);
 
+  // Phone helper: strips 91 / 0 prefix if entered, returns exactly base digits
+  const getCleanPhoneDigits = (phone: string) => {
+    const digits = phone.replace(/\D/g, "");
+    if (digits.length === 12 && digits.startsWith("91")) return digits.slice(2);
+    if (digits.length === 11 && digits.startsWith("0")) return digits.slice(1);
+    return digits;
+  };
+
+  const purePhoneDigits = getCleanPhoneDigits(customerPhone);
+  const isPhoneValid = purePhoneDigits.length === 10;
+  const isNameValid = customerName.trim().length > 0;
+  const isEmailValid = !customerEmail.trim() || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail.trim());
+  const isFormValid = isNameValid && isPhoneValid && isEmailValid && cartItems.length > 0;
+
   // Submit new quotation enquiry
   const handleRegisterEnquiry = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,10 +136,9 @@ function QuotationContent() {
       return;
     }
 
-    // Validation for Contact Number (required & at least 10 digits)
-    const phoneDigits = customerPhone.replace(/\D/g, "");
-    if (!customerPhone.trim() || phoneDigits.length < 10) {
-      setFormError("Please enter a valid contact phone number (at least 10 digits).");
+    // Validation for Contact Number (strictly 10 digits)
+    if (!isPhoneValid) {
+      setFormError("Please enter a valid 10-digit phone number (e.g. 9876543210).");
       return;
     }
 
@@ -262,11 +275,11 @@ function QuotationContent() {
           {/* Action Header (Hidden on Print) */}
           <div className="flex flex-wrap items-center justify-between gap-4 no-print">
             <Link
-              href="/?openCart=true"
+              href="/"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-white dark:bg-[#0f1523] border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-400 transition"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>Back to Cart</span>
+              <span>Continue Shopping</span>
             </Link>
 
             <div className="flex items-center gap-2.5">
@@ -480,11 +493,11 @@ function QuotationContent() {
       <div className="min-h-screen bg-slate-50 dark:bg-[#080b11] text-slate-900 dark:text-slate-100 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl mx-auto space-y-6">
           <Link
-            href="/?openCart=true"
+            href="/"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-white dark:bg-[#0f1523] border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-400 transition"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Back to Cart</span>
+            <span>Continue Shopping</span>
           </Link>
 
           <div className="bg-white dark:bg-[#0f1523] border border-slate-200 dark:border-slate-800 rounded-3xl p-8 sm:p-10 shadow-2xl text-center space-y-6">
@@ -695,17 +708,40 @@ function QuotationContent() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1 font-bold">
-                      PHONE / WHATSAPP NUMBER *
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-[11px] text-slate-500 dark:text-slate-400 font-bold">
+                        PHONE / WHATSAPP NUMBER (10 DIGITS) *
+                      </label>
+                      {customerPhone.trim() && (
+                        <span className={`text-[10px] font-mono font-bold ${
+                          isPhoneValid ? "text-emerald-500" : "text-amber-500"
+                        }`}>
+                          {isPhoneValid ? "✓ Valid 10-digit number" : `${purePhoneDigits.length}/10 digits`}
+                        </span>
+                      )}
+                    </div>
                     <input
                       type="tel"
                       required
                       value={customerPhone}
-                      onChange={(e) => setCustomerPhone(e.target.value)}
-                      placeholder="+91 98765 43210"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#161e31] text-slate-900 dark:text-white focus:outline-none focus:border-red-500"
+                      onChange={(e) => {
+                        setCustomerPhone(e.target.value);
+                        if (formError) setFormError("");
+                      }}
+                      placeholder="e.g. 9876543210"
+                      className={`w-full px-3.5 py-2.5 rounded-xl border bg-slate-50 dark:bg-[#161e31] text-slate-900 dark:text-white focus:outline-none transition ${
+                        customerPhone.trim() && !isPhoneValid
+                          ? "border-amber-500/60 focus:border-amber-500"
+                          : isPhoneValid
+                          ? "border-emerald-500/60 focus:border-emerald-500"
+                          : "border-slate-200 dark:border-slate-700 focus:border-red-500"
+                      }`}
                     />
+                    {!isPhoneValid && customerPhone.trim().length > 0 && (
+                      <p className="text-[10px] text-amber-500 font-mono mt-1">
+                        Phone number must contain exactly 10 digits (currently {purePhoneDigits.length}).
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -763,8 +799,12 @@ function QuotationContent() {
 
                   <button
                     type="submit"
-                    disabled={submitting}
-                    className="w-full py-3.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-extrabold uppercase tracking-wider text-xs shadow-lg shadow-red-600/30 transition active:scale-95 flex items-center justify-center gap-2 mt-4"
+                    disabled={!isFormValid || submitting}
+                    className={`w-full py-3.5 px-4 rounded-xl font-extrabold uppercase tracking-wider text-xs transition-all flex items-center justify-center gap-2 mt-4 ${
+                      isFormValid && !submitting
+                        ? "bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/30 cursor-pointer active:scale-98"
+                        : "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 border border-slate-300/80 dark:border-slate-700/80 cursor-not-allowed opacity-60 shadow-none pointer-events-none"
+                    }`}
                   >
                     {submitting ? (
                       <>
@@ -778,6 +818,15 @@ function QuotationContent() {
                       </>
                     )}
                   </button>
+
+                  {/* Inline guidance if button is disabled */}
+                  {!isFormValid && (
+                    <div className="text-[11px] text-slate-400 dark:text-slate-500 font-mono text-center pt-1 space-y-0.5">
+                      {!isNameValid && <div>• Please enter your full name</div>}
+                      {!isPhoneValid && <div>• Please enter a valid 10-digit phone number</div>}
+                      {!isEmailValid && <div>• Please check your email address format</div>}
+                    </div>
+                  )}
                 </form>
 
               </div>

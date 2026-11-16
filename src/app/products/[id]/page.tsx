@@ -10,6 +10,7 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import TechnicalDrawing from "@/components/TechnicalDrawing";
 import { getDisplayImageUrl } from "@/lib/imageUrl";
+import { ShareProductModal } from "@/components/ShareProductModal";
 import { 
   ShieldCheck, 
   Play, 
@@ -43,6 +44,8 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const [copiedLink, setCopiedLink] = useState(false);
   const [activeTab, setActiveTab] = useState<"specs" | "inbox" | "installation">("specs");
+  const [isHovered, setIsHovered] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   useEffect(() => {
     async function loadProduct() {
@@ -110,6 +113,15 @@ export default function ProductDetailPage() {
   const isViewingVideo = hasVideo && activeMediaIndex === imageList.length;
   const isInCart = items.some((i) => i.id === product.id);
 
+  // Auto-play slideshow every 2 seconds (pauses on hover or when video is viewed)
+  useEffect(() => {
+    if (isViewingVideo || isHovered || imageList.length <= 1) return;
+    const interval = setInterval(() => {
+      setActiveMediaIndex((prev) => (prev + 1) % imageList.length);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [isViewingVideo, isHovered, imageList.length]);
+
   // WhatsApp Enquiry
   const handleShareWhatsApp = () => {
     const text = `Hello Cars9 Studio! I am inquiring about:
@@ -160,7 +172,11 @@ Please share custom quotation, studio bay availability & installation schedule.`
           <div className="lg:col-span-7 space-y-4">
             
             {/* Primary High-Res Viewer */}
-            <div className="relative aspect-4/3 w-full rounded-3xl overflow-hidden bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-2xl flex items-center justify-center">
+            <div 
+              className="relative aspect-4/3 w-full rounded-3xl overflow-hidden bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-2xl flex items-center justify-center group"
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={() => setIsHovered(false)}
+            >
               {isViewingVideo ? (
                 <div className="w-full h-full flex items-center justify-center bg-black">
                   <video
@@ -180,20 +196,37 @@ Please share custom quotation, studio bay availability & installation schedule.`
 
               {/* Badges */}
               {product.badge && (
-                <div className="absolute top-4 left-4 px-3.5 py-1.5 rounded-full text-xs font-mono font-bold bg-red-600 text-white shadow-lg">
+                <div className="absolute top-4 left-4 px-3.5 py-1.5 rounded-full text-xs font-mono font-bold bg-red-600 text-white shadow-lg z-10">
                   {product.badge}
                 </div>
               )}
 
-              {/* 1-Click Copy Share Link (Admin On/Off Controlled) */}
+              {/* Share Product Modal Button (Admin On/Off Controlled) */}
               {settings.pdp_showDirectShareLink !== false && (
                 <button
-                  onClick={handleCopyLink}
-                  className="absolute top-4 right-4 p-2.5 rounded-2xl bg-black/50 hover:bg-black/80 backdrop-blur-md text-white transition"
-                  title="Copy Direct Link"
+                  onClick={() => setIsShareModalOpen(true)}
+                  className="absolute top-4 right-4 p-2.5 rounded-2xl bg-black/50 hover:bg-black/80 backdrop-blur-md text-white transition cursor-pointer z-10 active:scale-95"
+                  title="Share Accessory"
                 >
-                  {copiedLink ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
+                  <Share2 className="w-4 h-4" />
                 </button>
+              )}
+
+              {/* Slideshow Progress Dot Indicator */}
+              {!isViewingVideo && imageList.length > 1 && (
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md z-10">
+                  {imageList.map((_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setActiveMediaIndex(i)}
+                      className={`h-1.5 rounded-full transition-all ${
+                        activeMediaIndex === i ? "w-5 bg-red-500" : "w-1.5 bg-white/50 hover:bg-white"
+                      }`}
+                      title={`Slide ${i + 1}`}
+                    />
+                  ))}
+                </div>
               )}
             </div>
 
@@ -395,6 +428,16 @@ Please share custom quotation, studio bay availability & installation schedule.`
                   <ShoppingBag className="w-4 h-4" />
                   <span>{isInCart ? "In Enquiry List (Add More)" : "Add to Enquiry / Quotation"}</span>
                 </button>
+
+                {/* Share Accessory Button */}
+                <button
+                  type="button"
+                  onClick={() => setIsShareModalOpen(true)}
+                  className="p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0f1523] text-slate-700 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 hover:border-slate-400 transition flex items-center justify-center shrink-0 shadow-sm cursor-pointer active:scale-95"
+                  title="Share this accessory"
+                >
+                  <Share2 className="w-5 h-5" />
+                </button>
               </div>
 
               {/* WhatsApp Direct Enquiry Button (Admin On/Off Controlled) */}
@@ -550,6 +593,13 @@ Please share custom quotation, studio bay availability & installation schedule.`
         )}
 
       </main>
+
+      {/* Product Share Modal */}
+      <ShareProductModal
+        product={product}
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+      />
 
       {/* Dynamic Studio Footer */}
       <Footer />
