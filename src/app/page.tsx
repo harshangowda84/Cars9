@@ -57,6 +57,22 @@ function HomeContent() {
   const [selectedYear, setSelectedYear] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
+  // Custom Arranged Brands Order
+  const orderedBrands = useMemo(() => {
+    if (!settings.brand_order || !Array.isArray(settings.brand_order) || settings.brand_order.length === 0) {
+      return [...brands].sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0));
+    }
+    const orderList = settings.brand_order;
+    return [...brands].sort((a, b) => {
+      const idxA = orderList.indexOf(a.id);
+      const idxB = orderList.indexOf(b.id);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return (a.rank ?? 0) - (b.rank ?? 0);
+    });
+  }, [brands, settings.brand_order]);
+
   // PDP Modal state
   const [selectedProduct, setSelectedProduct] = useState<CarPart | null>(null);
 
@@ -362,7 +378,7 @@ function HomeContent() {
               {/* Prominent Vehicle Selector Configurator Dock (Brand -> Model -> Year) */}
               {settings.plp_showVehicleCascade && (
                 <VehicleSelector
-                  brands={brands}
+                  brands={orderedBrands}
                   selectedBrand={selectedBrand}
                   selectedModel={selectedModel}
                   selectedYear={selectedYear}

@@ -60,7 +60,10 @@ import {
   Square,
   Archive,
   Menu,
-  Sparkles
+  Sparkles,
+  ChevronUp,
+  ArrowUpDown,
+  ArrowUpToLine
 } from "lucide-react";
 import { Cars9Logo } from "@/components/Cars9Logo";
 import { getDisplayImageUrl } from "@/lib/imageUrl";
@@ -205,6 +208,8 @@ export default function AdminPortalPage() {
   // Brands & Models Management Search & Sub-Tab State
   const [brandSearch, setBrandSearch] = useState("");
   const [brandSubTab, setBrandSubTab] = useState<"active" | "recycle_bin">("active");
+  const [showArrangeBrandsModal, setShowArrangeBrandsModal] = useState(false);
+  const [savingBrandOrder, setSavingBrandOrder] = useState(false);
 
   // Custom Delete Alert / Confirmation Dialog State
   const [deleteModal, setDeleteModal] = useState<{
@@ -963,6 +968,142 @@ export default function AdminPortalPage() {
       }
     } catch (e) {
       console.error("Failed to update model photo", e);
+    }
+  };
+
+  // -------------------------------------------------------------
+  // Brand Display Order & Homepage Arrangement Handlers
+  // -------------------------------------------------------------
+  const handleSetBrandFirst = async (brandId: string, brandName: string) => {
+    try {
+      const targetBrand = activeBrands.find((b) => b.id === brandId);
+      if (!targetBrand) return;
+
+      const otherBrands = activeBrands.filter((b) => b.id !== brandId);
+      const reordered = [targetBrand, ...otherBrands];
+      const newOrderIds = reordered.map((b) => b.id);
+
+      // Immediately update local brands with new rank
+      setBrands((prev) => {
+        return prev.map((b) => {
+          const idx = newOrderIds.indexOf(b.id);
+          return idx !== -1 ? { ...b, rank: idx } : b;
+        });
+      });
+
+      // Persist to backend
+      await Promise.all([
+        fetch("/api/brands/order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ brandIds: newOrderIds }),
+        }),
+        updateSetting("brand_order", newOrderIds),
+      ]);
+
+      showToastNotice(`"${brandName}" is now set to 1st place on the Homepage!`, "success");
+    } catch (err: any) {
+      alert("Failed to update brand order: " + err.message);
+    }
+  };
+
+  const handleMoveBrand = async (brandId: string, direction: "up" | "down") => {
+    try {
+      const idx = activeBrands.findIndex((b) => b.id === brandId);
+      if (idx === -1) return;
+      if (direction === "up" && idx === 0) return;
+      if (direction === "down" && idx === activeBrands.length - 1) return;
+
+      const targetIdx = direction === "up" ? idx - 1 : idx + 1;
+      const reordered = [...activeBrands];
+      const temp = reordered[idx];
+      reordered[idx] = reordered[targetIdx];
+      reordered[targetIdx] = temp;
+
+      const newOrderIds = reordered.map((b) => b.id);
+
+      // Immediately update local brands with new rank
+      setBrands((prev) => {
+        return prev.map((b) => {
+          const newRank = newOrderIds.indexOf(b.id);
+          return newRank !== -1 ? { ...b, rank: newRank } : b;
+        });
+      });
+
+      // Persist to backend
+      await Promise.all([
+        fetch("/api/brands/order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ brandIds: newOrderIds }),
+        }),
+        updateSetting("brand_order", newOrderIds),
+      ]);
+
+      showToastNotice("Brand display order updated successfully!", "success");
+    } catch (err: any) {
+      alert("Failed to move brand: " + err.message);
+    }
+  };
+
+  const handleSetBrandPosition = async (brandId: string, newPositionOneBased: number) => {
+    try {
+      const newPos = newPositionOneBased - 1;
+      const currentIdx = activeBrands.findIndex((b) => b.id === brandId);
+      if (currentIdx === -1 || currentIdx === newPos) return;
+
+      const reordered = [...activeBrands];
+      const [item] = reordered.splice(currentIdx, 1);
+      reordered.splice(newPos, 0, item);
+
+      const newOrderIds = reordered.map((b) => b.id);
+
+      setBrands((prev) => {
+        return prev.map((b) => {
+          const newRank = newOrderIds.indexOf(b.id);
+          return newRank !== -1 ? { ...b, rank: newRank } : b;
+        });
+      });
+
+      await Promise.all([
+        fetch("/api/brands/order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ brandIds: newOrderIds }),
+        }),
+        updateSetting("brand_order", newOrderIds),
+      ]);
+
+      showToastNotice(`Brand position updated to #${newPositionOneBased}!`, "success");
+    } catch (err: any) {
+      alert("Failed to update brand position: " + err.message);
+    }
+  };
+
+  const handleResetBrandOrderAlphabetical = async () => {
+    try {
+      const alphaSorted = [...activeBrands].sort((a, b) => a.name.localeCompare(b.name));
+      const newOrderIds = alphaSorted.map((b) => b.id);
+
+      setBrands((prev) => {
+        return prev.map((b) => {
+          const newRank = newOrderIds.indexOf(b.id);
+          return newRank !== -1 ? { ...b, rank: newRank } : b;
+        });
+      });
+
+      await Promise.all([
+        fetch("/api/brands/order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ brandIds: newOrderIds }),
+        }),
+        updateSetting("brand_order", newOrderIds),
+      ]);
+
+      showToastNotice("Brands reset to alphabetical order (A-Z)!", "info");
+    } catch (err: any) {
+      alert("Failed to reset brand order: " + err.message);
     }
   };
 
@@ -2014,7 +2155,8 @@ Thank you for choosing Cars9 Studio!`;
 
   // Active vs Deleted Brands & Models computations
   const activeBrands = useMemo(() => {
-    return brands.filter((b) => !b.isDeleted);
+    const list = brands.filter((b) => !b.isDeleted);
+    return [...list].sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0));
   }, [brands]);
 
   const deletedBrands = useMemo(() => {
@@ -4808,8 +4950,18 @@ Thank you for choosing Cars9 Studio!`;
 
               <div className="flex items-center gap-3">
                 <button
+                  type="button"
+                  onClick={() => setShowArrangeBrandsModal(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-xs shadow-md transition self-start sm:self-auto cursor-pointer active:scale-95"
+                  title="Arrange brand display order on the storefront homepage"
+                >
+                  <ArrowUpDown className="w-4 h-4" />
+                  <span>Arrange Brand Order</span>
+                </button>
+
+                <button
                   onClick={() => setShowAddBrandModal(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md transition self-start sm:self-auto"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md transition self-start sm:self-auto cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Add New Brand</span>
@@ -4916,6 +5068,8 @@ Thank you for choosing Cars9 Studio!`;
                           const itemsCount = products.filter(
                             (p) => !p.isDeleted && p.brand.toLowerCase() === b.name.toLowerCase()
                           ).length;
+                          const actualRankIdx = activeBrands.findIndex((x) => x.id === b.id);
+                          const isFirst = actualRankIdx === 0;
 
                           return (
                             <div
@@ -4928,14 +5082,14 @@ Thank you for choosing Cars9 Studio!`;
                                   }, 100);
                                 }
                               }}
-                              className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-4 group ${
+                              className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 group ${
                                 isSelected
                                   ? "bg-red-600/10 border-red-500 shadow-md ring-1 ring-red-500"
                                   : `${cardClass} border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700`
                               }`}
                             >
                               <div className="flex items-center gap-3.5 min-w-0">
-                                {/* Logo container */}
+                                {/* Logo container with rank pill */}
                                 <div className="relative w-14 h-14 rounded-xl bg-white p-2 flex items-center justify-center shrink-0 shadow-sm border border-slate-200 overflow-hidden">
                                   {brandLogo ? (
                                     <img
@@ -4951,17 +5105,65 @@ Thank you for choosing Cars9 Studio!`;
                                 </div>
 
                                 <div className="min-w-0">
-                                  <h4 className="font-extrabold text-sm truncate group-hover:text-red-500 transition-colors">
-                                    {b.name}
-                                  </h4>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <h4 className="font-extrabold text-sm truncate group-hover:text-red-500 transition-colors">
+                                      {b.name}
+                                    </h4>
+                                    {isFirst ? (
+                                      <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-black uppercase bg-amber-500 text-slate-950 shadow-xs flex items-center gap-1">
+                                        <Sparkles className="w-2.5 h-2.5" />
+                                        <span>1st on Homepage</span>
+                                      </span>
+                                    ) : (
+                                      <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                                        #{actualRankIdx + 1}
+                                      </span>
+                                    )}
+                                  </div>
                                   <p className="text-xs opacity-60 font-mono mt-0.5">
                                     {modelsCount} Models • {itemsCount} Accessories
                                   </p>
                                 </div>
                               </div>
 
-                              {/* Actions */}
-                              <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                              {/* Actions & Reordering Controls */}
+                              <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center" onClick={(e) => e.stopPropagation()}>
+                                {/* Quick Make 1st Button */}
+                                {!isFirst && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSetBrandFirst(b.id, b.name)}
+                                    className="px-2.5 py-1 rounded-xl text-[10px] font-mono font-extrabold bg-amber-500/15 hover:bg-amber-500 text-amber-600 hover:text-slate-950 dark:text-amber-400 dark:hover:text-slate-950 transition flex items-center gap-1 active:scale-95 cursor-pointer"
+                                    title={`Set ${b.name} to show 1st on homepage`}
+                                  >
+                                    <ArrowUpToLine className="w-3 h-3" />
+                                    <span>Set 1st</span>
+                                  </button>
+                                )}
+
+                                {/* Up / Down Reorder Arrows */}
+                                <div className="flex items-center border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-900">
+                                  <button
+                                    type="button"
+                                    disabled={actualRankIdx <= 0}
+                                    onClick={() => handleMoveBrand(b.id, "up")}
+                                    className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-900 dark:hover:text-white transition disabled:opacity-20 cursor-pointer"
+                                    title="Move brand up"
+                                  >
+                                    <ChevronUp className="w-3.5 h-3.5" />
+                                  </button>
+                                  <div className="w-[1px] h-3.5 bg-slate-200 dark:bg-slate-800" />
+                                  <button
+                                    type="button"
+                                    disabled={actualRankIdx >= activeBrands.length - 1}
+                                    onClick={() => handleMoveBrand(b.id, "down")}
+                                    className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-900 dark:hover:text-white transition disabled:opacity-20 cursor-pointer"
+                                    title="Move brand down"
+                                  >
+                                    <ChevronDown className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+
                                 <button
                                   onClick={() =>
                                     setEditingBrandLogo({
@@ -5376,6 +5578,185 @@ Thank you for choosing Cars9 Studio!`;
                     )}
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* MODAL: ARRANGE BRAND DISPLAY ORDER */}
+            {showArrangeBrandsModal && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in overflow-y-auto">
+                <div className={`${cardClass} border rounded-3xl p-6 sm:p-8 max-w-2xl w-full space-y-6 shadow-2xl my-auto max-h-[90vh] overflow-y-auto`}>
+                  {/* Modal Header */}
+                  <div className="flex items-start justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-amber-500/15 text-amber-500 flex items-center justify-center shrink-0">
+                        <ArrowUpDown className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-black flex items-center gap-2">
+                          <span>Arrange Homepage Brand Display Order</span>
+                        </h3>
+                        <p className="text-xs opacity-60 mt-0.5">
+                          Set the display sequence for car brands on the Homepage &apos;SELECT CAR BRAND&apos; grid (e.g. Set Mahindra to show 1st).
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowArrangeBrandsModal(false)}
+                      className="p-2 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* Live Sequence Preview Bar */}
+                  <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-2">
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 block">
+                      Live Storefront Brand Sequence (Homepage Display)
+                    </span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {activeBrands.map((b, idx) => (
+                        <div
+                          key={b.id}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition ${
+                            idx === 0
+                              ? "bg-amber-500 text-slate-950 shadow-sm"
+                              : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300"
+                          }`}
+                        >
+                          <span className={idx === 0 ? "font-black" : "opacity-50"}>#{idx + 1}</span>
+                          <span>{b.name}</span>
+                          {idx < activeBrands.length - 1 && <span className="opacity-30 ml-1">&rarr;</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Brand Items Reorder List */}
+                  <div className="space-y-2.5 divide-y divide-slate-100 dark:divide-slate-800/60 max-h-96 overflow-y-auto pr-1">
+                    {activeBrands.map((b, idx) => {
+                      const brandLogo = b.logo ? getDisplayImageUrl(b.logo) : null;
+                      const isFirst = idx === 0;
+
+                      return (
+                        <div
+                          key={b.id}
+                          className={`pt-2.5 first:pt-0 p-3 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition ${
+                            isFirst ? "bg-amber-500/5 border border-amber-500/20" : "hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            {/* Position Badge */}
+                            <div className={`w-8 h-8 rounded-xl font-mono text-xs font-black flex items-center justify-center shrink-0 ${
+                              isFirst
+                                ? "bg-amber-500 text-slate-950 shadow-sm"
+                                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                            }`}>
+                              #{idx + 1}
+                            </div>
+
+                            {/* Logo */}
+                            <div className="w-10 h-10 rounded-xl bg-white p-1.5 flex items-center justify-center shrink-0 border border-slate-200 overflow-hidden">
+                              {brandLogo ? (
+                                <img src={brandLogo} alt={b.name} className="max-w-full max-h-full object-contain" />
+                              ) : (
+                                <span className="text-[10px] font-black text-slate-800 font-mono">{b.name.slice(0, 3)}</span>
+                              )}
+                            </div>
+
+                            {/* Name and details */}
+                            <div className="min-w-0">
+                              <h4 className="font-bold text-sm truncate flex items-center gap-2">
+                                <span>{b.name}</span>
+                                {isFirst && (
+                                  <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-black uppercase bg-amber-500/20 text-amber-600 dark:text-amber-400">
+                                    Shows 1st on Homepage
+                                  </span>
+                                )}
+                              </h4>
+                              <p className="text-[11px] opacity-60 font-mono">
+                                {(b.subbrands || []).filter((s: any) => !s.isDeleted).length} Models
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Reordering Controls */}
+                          <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                            {/* Dropdown position selector */}
+                            <select
+                              value={idx + 1}
+                              onChange={(e) => handleSetBrandPosition(b.id, parseInt(e.target.value, 10))}
+                              className={`px-2.5 py-1.5 rounded-xl border text-xs font-mono font-bold ${inputClass}`}
+                              title="Set exact position"
+                            >
+                              {activeBrands.map((_, pIdx) => (
+                                <option key={pIdx + 1} value={pIdx + 1}>
+                                  Pos #{pIdx + 1} {pIdx === 0 ? "(1st)" : ""}
+                                </option>
+                              ))}
+                            </select>
+
+                            {/* Show 1st Quick Button */}
+                            {!isFirst && (
+                              <button
+                                type="button"
+                                onClick={() => handleSetBrandFirst(b.id, b.name)}
+                                className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs font-mono transition flex items-center gap-1 active:scale-95 shadow-xs cursor-pointer"
+                                title={`Set ${b.name} as #1`}
+                              >
+                                <ArrowUpToLine className="w-3.5 h-3.5" />
+                                <span>Make 1st</span>
+                              </button>
+                            )}
+
+                            {/* Up / Down arrows */}
+                            <div className="flex items-center border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-900">
+                              <button
+                                type="button"
+                                disabled={idx === 0}
+                                onClick={() => handleMoveBrand(b.id, "up")}
+                                className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition disabled:opacity-20 cursor-pointer"
+                                title="Move up"
+                              >
+                                <ChevronUp className="w-4 h-4" />
+                              </button>
+                              <div className="w-[1px] h-4 bg-slate-200 dark:bg-slate-800" />
+                              <button
+                                type="button"
+                                disabled={idx === activeBrands.length - 1}
+                                onClick={() => handleMoveBrand(b.id, "down")}
+                                className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition disabled:opacity-20 cursor-pointer"
+                                title="Move down"
+                              >
+                                <ChevronDown className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Modal Footer */}
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
+                    <button
+                      type="button"
+                      onClick={handleResetBrandOrderAlphabetical}
+                      className="text-xs font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center gap-1.5 transition cursor-pointer"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Reset to Alphabetical (A-Z)</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowArrangeBrandsModal(false)}
+                      className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition shadow-md cursor-pointer"
+                    >
+                      Done / Close
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
 

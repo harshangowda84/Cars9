@@ -41,6 +41,9 @@ export const defaultSettings: Record<string, any> = {
   whatsapp_pdp_phone: "",
   whatsapp_quotation_phone: "",
 
+  // Car Brands Custom Homepage Display Order
+  brand_order: [],
+
   // Fallback Default Hero Banner (Shown when no active banners)
   default_banner_title1: "ELEVATE YOUR CAR WITH",
   default_banner_title2: "CUSTOM ACCESSORIES",

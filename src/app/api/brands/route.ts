@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
-import { brands, subbrands } from '@/db/schema';
+import { brands, subbrands, siteSettings } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
 export const dynamic = 'force-dynamic';
@@ -14,28 +14,47 @@ export async function GET(request: Request) {
     const allBrands = await db.select().from(brands);
     const allSubbrands = await db.select().from(subbrands);
 
+    // Fetch brand order preference from siteSettings
+    let brandOrder: string[] = [];
+    try {
+      const orderSetting = await db.select().from(siteSettings).where(eq(siteSettings.key, 'brand_order'));
+      if (orderSetting.length > 0 && orderSetting[0].value) {
+        brandOrder = JSON.parse(orderSetting[0].value);
+      }
+    } catch {
+      brandOrder = [];
+    }
+
     const filteredBrands = includeDeleted
       ? allBrands
       : allBrands.filter((b: any) => !b.isDeleted);
 
-    const formattedBrands = filteredBrands.map((b: any) => ({
-      id: b.id,
-      name: b.name,
-      logo: b.logo || b.logoUrl || null,
-      rank: b.rank || 0,
-      isDeleted: Boolean(b.isDeleted),
-      deletedAt: b.deletedAt || null,
-      subbrands: allSubbrands
-        .filter((sb: any) => sb.brandId === b.id && (includeDeleted ? true : !sb.isDeleted))
-        .map((sb: any) => ({
-          id: sb.id,
-          name: sb.name,
-          imageUrl: sb.imageUrl || null,
-          years: typeof sb.years === 'string' ? JSON.parse(sb.years) : (sb.years || []),
-          isDeleted: Boolean(sb.isDeleted),
-          deletedAt: sb.deletedAt || null,
-        }))
-    }));
+    const formattedBrands = filteredBrands.map((b: any, originalIndex: number) => {
+      const orderIdx = Array.isArray(brandOrder) ? brandOrder.indexOf(b.id) : -1;
+      const computedRank = orderIdx !== -1 ? orderIdx : 1000 + originalIndex;
+
+      return {
+        id: b.id,
+        name: b.name,
+        logo: b.logo || b.logoUrl || null,
+        rank: computedRank,
+        isDeleted: Boolean(b.isDeleted),
+        deletedAt: b.deletedAt || null,
+        subbrands: allSubbrands
+          .filter((sb: any) => sb.brandId === b.id && (includeDeleted ? true : !sb.isDeleted))
+          .map((sb: any) => ({
+            id: sb.id,
+            name: sb.name,
+            imageUrl: sb.imageUrl || null,
+            years: typeof sb.years === 'string' ? JSON.parse(sb.years) : (sb.years || []),
+            isDeleted: Boolean(sb.isDeleted),
+            deletedAt: sb.deletedAt || null,
+          }))
+      };
+    });
+
+    // Sort brands by custom arrange order rank so 1st arranged brand is always first
+    formattedBrands.sort((a: any, b: any) => (a.rank ?? 0) - (b.rank ?? 0));
 
     return NextResponse.json(formattedBrands, {
       headers: {

@@ -36,6 +36,9 @@ export interface SiteSettings {
   whatsapp_pdp_phone?: string;
   whatsapp_quotation_phone?: string;
 
+  // Car Brands Custom Homepage Display Order
+  brand_order?: string[];
+
   // Fallback Default Hero Banner (Shown when no active banners)
   default_banner_title1?: string;
   default_banner_title2?: string;
@@ -104,6 +107,8 @@ const defaultSettings: SiteSettings = {
   whatsapp_footer_phone: "",
   whatsapp_pdp_phone: "",
   whatsapp_quotation_phone: "",
+
+  brand_order: [],
 
   default_banner_title1: "ELEVATE YOUR CAR WITH",
   default_banner_title2: "CUSTOM ACCESSORIES",
