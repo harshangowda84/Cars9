@@ -5903,10 +5903,18 @@ Thank you for choosing Cars9 Studio!`;
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Shield className="w-4 h-4 text-red-500 shrink-0" />
-                    <label className="text-xs font-bold uppercase tracking-wider font-mono flex flex-wrap items-center gap-1.5">
-                      <span>Master Admin Password</span>
-                      <span className="text-[11px] text-slate-400 font-normal">
-                        (Current: {showCurrentAdminPass ? (settings.admin_password || "cars9pass") : "••••••••"})
+                    <label className="text-xs font-mono flex flex-wrap items-center gap-1.5">
+                      <span className="font-bold uppercase tracking-wider">Master Admin Password</span>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 font-normal normal-case">
+                        (Current:{" "}
+                        {showCurrentAdminPass ? (
+                          <code className="font-mono font-bold text-red-600 dark:text-red-400 normal-case px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800">
+                            {settings.admin_password || "cars9pass"}
+                          </code>
+                        ) : (
+                          <span className="font-mono tracking-widest text-slate-400">••••••••</span>
+                        )}
+                        )
                       </span>
                     </label>
                   </div>
@@ -5927,7 +5935,7 @@ Thank you for choosing Cars9 Studio!`;
                   placeholder="Enter new admin password..."
                   value={newAdminPassword}
                   onChange={(e) => setNewAdminPassword(e.target.value)}
-                  className={`w-full px-4 py-2.5 rounded-xl border text-xs font-mono ${inputClass}`}
+                  className={`w-full px-4 py-2.5 rounded-xl border text-xs font-mono normal-case ${inputClass}`}
                 />
                 <p className="text-[11px] opacity-60">
                   Controls full access to Hero Banners, Product Inventory, PLP/PDP switches, and Security settings.
@@ -5939,10 +5947,18 @@ Thank you for choosing Cars9 Studio!`;
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Zap className="w-4 h-4 text-emerald-500 shrink-0" />
-                    <label className="text-xs font-bold uppercase tracking-wider font-mono flex flex-wrap items-center gap-1.5">
-                      <span>Staff Easy Access Password</span>
-                      <span className="text-[11px] text-slate-400 font-normal">
-                        (Current: {showCurrentStaffPass ? (settings.staff_password || "cars9staff") : "••••••••"})
+                    <label className="text-xs font-mono flex flex-wrap items-center gap-1.5">
+                      <span className="font-bold uppercase tracking-wider">Staff Easy Access Password</span>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 font-normal normal-case">
+                        (Current:{" "}
+                        {showCurrentStaffPass ? (
+                          <code className="font-mono font-bold text-emerald-600 dark:text-emerald-400 normal-case px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800">
+                            {settings.staff_password || "cars9staff"}
+                          </code>
+                        ) : (
+                          <span className="font-mono tracking-widest text-slate-400">••••••••</span>
+                        )}
+                        )
                       </span>
                     </label>
                   </div>
@@ -5963,7 +5979,7 @@ Thank you for choosing Cars9 Studio!`;
                   placeholder="Enter new staff quick-entry password..."
                   value={newStaffPassword}
                   onChange={(e) => setNewStaffPassword(e.target.value)}
-                  className={`w-full px-4 py-2.5 rounded-xl border text-xs font-mono ${inputClass}`}
+                  className={`w-full px-4 py-2.5 rounded-xl border text-xs font-mono normal-case ${inputClass}`}
                 />
                 <p className="text-[11px] opacity-60">
                   Provide this password to your studio employees. Employees can log in via <strong>&ldquo;Staff Easy Entry&rdquo;</strong> with this password only, gaining direct access strictly to <strong>Enquiries</strong> and <strong>Warranty Manager</strong>.
