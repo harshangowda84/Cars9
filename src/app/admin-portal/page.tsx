@@ -44,6 +44,7 @@ import {
   FileCode,
   Wrench,
   Award,
+  MapPin,
   KeyRound,
   Zap,
   Shield,
@@ -299,6 +300,7 @@ export default function AdminPortalPage() {
     phone: "",
     email: "",
     address: "",
+    mapsUrl: "",
     timings: "",
     copyright: "",
     showWarranty: true,
@@ -1660,6 +1662,7 @@ Thank you for choosing Cars9 Studio!`;
         phone: settings.footer_phone || "+91 90000 00000 / +91 98888 88888",
         email: settings.footer_email || "concierge@cars9studio.com",
         address: settings.footer_address || "Main Studio Bay, HSR Layout / Indiranagar, Bangalore",
+        mapsUrl: settings.footer_maps_url || "https://maps.google.com/?q=Cars9+Automotive+Studio+Bangalore",
         timings: settings.footer_timings || "Monday – Saturday: 10:00 AM – 8:30 PM\nSunday: By Prior Appointment Only\nDust-Free Closed Installation Bays\nPrecision Acoustic Calibration Bay",
         copyright: settings.footer_copyright || "© {year} CARS9 Automotive Studio. All rights reserved.",
         showWarranty: settings.footer_show_warranty_link !== false,
@@ -1712,6 +1715,7 @@ Thank you for choosing Cars9 Studio!`;
       await updateSetting("footer_phone", footerForm.phone);
       await updateSetting("footer_email", footerForm.email);
       await updateSetting("footer_address", footerForm.address);
+      await updateSetting("footer_maps_url", footerForm.mapsUrl);
       await updateSetting("footer_timings", footerForm.timings);
       await updateSetting("footer_copyright", footerForm.copyright);
       await updateSetting("footer_show_warranty_link", footerForm.showWarranty);
@@ -5809,6 +5813,24 @@ Thank you for choosing Cars9 Studio!`;
                     className={`w-full px-4 py-2.5 rounded-xl border text-xs ${inputClass}`}
                     required
                   />
+                </div>
+
+                {/* Google Maps URL */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider font-mono opacity-80 flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-red-500" />
+                    <span>Google Maps Link (Store Locator Card & Footer)</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={footerForm.mapsUrl}
+                    onChange={(e) => setFooterForm({ ...footerForm, mapsUrl: e.target.value })}
+                    placeholder="https://maps.google.com/?q=... or https://maps.app.goo.gl/..."
+                    className={`w-full px-4 py-2.5 rounded-xl border text-xs font-mono normal-case ${inputClass}`}
+                  />
+                  <span className="text-[10px] opacity-60 font-mono">
+                    Powers the homepage &ldquo;Store Locator&rdquo; card and the footer &ldquo;View on Google Maps&rdquo; link.
+                  </span>
                 </div>
 
                 {/* Working Hours & Timings */}

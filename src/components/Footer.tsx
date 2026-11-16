@@ -30,6 +30,7 @@ export function Footer({ onSelectCategory }: FooterProps) {
   const phone = settings.footer_phone || "+91 90000 00000 / +91 98888 88888";
   const email = settings.footer_email || "concierge@cars9studio.com";
   const address = settings.footer_address || "Main Studio Bay, HSR Layout / Indiranagar, Bangalore";
+  const mapsUrl = settings.footer_maps_url || "https://maps.google.com/?q=Cars9+Automotive+Studio+Bangalore";
 
   const rawTimings = settings.footer_timings || 
     "Monday – Saturday: 10:00 AM – 8:30 PM\nSunday: By Prior Appointment Only\nDust-Free Closed Installation Bays\nPrecision Acoustic Calibration Bay";
@@ -153,7 +154,22 @@ export function Footer({ onSelectCategory }: FooterProps) {
             <div className="space-y-2.5 text-xs">
               <div className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-                <span>{address}</span>
+                <div className="space-y-1">
+                  <div>{address}</div>
+                  {mapsUrl && (
+                    <div>
+                      <a
+                        href={mapsUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[11px] font-mono text-red-600 dark:text-red-400 hover:text-red-500 font-semibold transition"
+                      >
+                        <span>View on Google Maps</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-emerald-500 shrink-0" />

@@ -403,15 +403,21 @@ function HomeContent() {
                 </div>
               </div>
 
-              <div className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white dark:bg-[#0f1523] border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-2 sm:gap-2.5">
-                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-                  <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <a
+                href={settings.footer_maps_url || "https://maps.google.com/?q=Cars9+Automotive+Studio+Bangalore"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white dark:bg-[#0f1523] border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-2 sm:gap-2.5 hover:border-amber-500/50 transition group cursor-pointer"
+                title="Open Studio Location on Google Maps"
+              >
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </div>
                 <div className="min-w-0">
-                  <span className="block text-[11px] sm:text-xs font-extrabold text-slate-900 dark:text-white truncate">Studio Bay Slot</span>
-                  <span className="text-[9px] sm:text-[10px] text-slate-400 font-mono truncate block">Certified Techs</span>
+                  <span className="block text-[11px] sm:text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-amber-500 transition-colors truncate">Store Locator</span>
+                  <span className="text-[9px] sm:text-[10px] text-slate-400 font-mono truncate block">Google Maps &rarr;</span>
                 </div>
-              </div>
+              </a>
             </div>
 
             {/* Product Listing Page (PLP - Pictures Only, No Price) */}
