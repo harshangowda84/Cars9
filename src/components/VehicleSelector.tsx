@@ -119,7 +119,7 @@ export function VehicleSelector({
   };
 
   return (
-    <div className="w-full relative z-20 -mt-6 sm:-mt-10 px-1.5 sm:px-4">
+    <div className="w-full relative z-20 mt-3 sm:mt-5 px-1.5 sm:px-4">
       <div className="max-w-6xl mx-auto rounded-2xl sm:rounded-3xl p-3 sm:p-5 bg-white/95 dark:bg-[#0c1019]/95 backdrop-blur-2xl border border-slate-200/90 dark:border-slate-800 shadow-xl transition-all">
         
         {/* ================================================================= */}

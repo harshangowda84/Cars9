@@ -138,7 +138,7 @@ export function HeroCarousel({ onExploreClick }: HeroCarouselProps) {
       onMouseLeave={() => setIsPaused(false)}
     >
       {/* Media Carousel */}
-      <div className="relative h-[280px] sm:h-[380px] lg:h-[420px] w-full">
+      <div className="relative h-[290px] sm:h-[400px] lg:h-[440px] w-full">
         {banners.map((b, idx) => (
           <div
             key={b.id || idx}
@@ -158,19 +158,19 @@ export function HeroCarousel({ onExploreClick }: HeroCarouselProps) {
         ))}
 
         {/* Content Container */}
-        <div className="relative z-20 h-full flex flex-col justify-center px-4 sm:px-14 lg:px-20 max-w-3xl pb-8 sm:pb-0">
+        <div className="relative z-20 h-full flex flex-col justify-center px-4 sm:px-14 lg:px-20 max-w-3xl pb-10 sm:pb-12">
           {current.badge && (
-            <div className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-mono font-bold bg-red-600 text-white w-fit shadow-md mb-2 sm:mb-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-mono font-bold bg-red-600 text-white w-fit shadow-md mb-2 sm:mb-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <ShieldCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               <span>{current.badge}</span>
             </div>
           )}
 
-          <h1 className="text-xl sm:text-5xl lg:text-6xl font-black text-slate-900 dark:text-white tracking-tight leading-[1.1] mb-2 sm:mb-4 drop-shadow-sm dark:drop-shadow-md transition-colors">
+          <h1 className="text-xl sm:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white tracking-tight leading-[1.12] mb-2 sm:mb-3 drop-shadow-sm dark:drop-shadow-md transition-colors">
             {current.title}
           </h1>
 
-          <p className="text-xs sm:text-sm lg:text-base text-slate-600 dark:text-slate-300 font-normal leading-relaxed mb-3.5 sm:mb-8 max-w-xl line-clamp-2 sm:line-clamp-none transition-colors">
+          <p className="text-xs sm:text-sm lg:text-base text-slate-600 dark:text-slate-300 font-normal leading-relaxed mb-3.5 sm:mb-5 max-w-xl line-clamp-2 sm:line-clamp-none transition-colors">
             {current.subtitle}
           </p>
 
