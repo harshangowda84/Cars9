@@ -130,7 +130,7 @@ export function ProductListing({
                     <div className="absolute bottom-3 right-3 opacity-90 group-hover:opacity-100 transition-opacity inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-[10px] font-mono">
                       <Camera className="w-3 h-3" />
                       <span>{item.images?.length || 1} Photos</span>
-                      {item.videoUrl && (
+                      {item.videoUrl && settings.pdp_showVideoPlayer !== false && settings.plp_showVideo !== false && (
                         <>
                           <span>•</span>
                           <Video className="w-3 h-3 text-red-400" />

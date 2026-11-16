@@ -27,6 +27,7 @@ export interface SiteSettings {
   plp_showQuickPreview: boolean;
   plp_showCouplerBadge: boolean;
   plp_showMediaCountPill: boolean;
+  plp_showVideo: boolean;
   plp_showCategoryTabs: boolean;
   plp_showVehicleCascade: boolean;
   plp_showBadges: boolean;
@@ -68,6 +69,7 @@ const defaultSettings: SiteSettings = {
   plp_showQuickPreview: true,
   plp_showCouplerBadge: true,
   plp_showMediaCountPill: true,
+  plp_showVideo: true,
   plp_showCategoryTabs: true,
   plp_showVehicleCascade: true,
   plp_showBadges: true,

@@ -32,6 +32,7 @@ export const defaultSettings: Record<string, any> = {
   plp_showQuickPreview: true,
   plp_showCouplerBadge: true,
   plp_showMediaCountPill: true,
+  plp_showVideo: true,
   plp_showCategoryTabs: true,
   plp_showVehicleCascade: true,
   plp_showBadges: true,

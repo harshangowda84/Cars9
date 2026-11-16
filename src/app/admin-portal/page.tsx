@@ -49,6 +49,7 @@ import {
   Shield,
   FileText,
   Camera,
+  Video,
   UploadCloud,
   Send,
   Undo2,
@@ -5401,13 +5402,29 @@ Thank you for choosing Cars9 Studio!`;
                     <ImageIcon className="w-4 h-4 text-amber-500" />
                     <span>Media Count Floating Pill</span>
                   </h4>
-                  <p className="text-xs opacity-60">Displays &ldquo;X Photos • 1 Video&rdquo; pill on thumbnails.</p>
+                  <p className="text-xs opacity-60">Displays photo count pill on product thumbnails.</p>
                 </div>
                 <button
                   onClick={() => updateSetting("plp_showMediaCountPill", !settings.plp_showMediaCountPill)}
                   className={`p-1.5 rounded-full transition ${settings.plp_showMediaCountPill ? "text-emerald-500" : "text-slate-400"}`}
                 >
                   {settings.plp_showMediaCountPill ? <ToggleRight className="w-9 h-9" /> : <ToggleLeft className="w-9 h-9" />}
+                </button>
+              </div>
+
+              <div className={`${cardClass} border rounded-3xl p-5 flex items-center justify-between gap-4`}>
+                <div className="space-y-1">
+                  <h4 className="font-bold text-sm flex items-center gap-2">
+                    <Video className="w-4 h-4 text-red-500" />
+                    <span>PLP Video Tag (&ldquo;• 1 Video&rdquo;)</span>
+                  </h4>
+                  <p className="text-xs opacity-60">Shows or hides the &ldquo;• 1 Video&rdquo; indicator on product thumbnails in the listing page.</p>
+                </div>
+                <button
+                  onClick={() => updateSetting("plp_showVideo", settings.plp_showVideo === false ? true : false)}
+                  className={`p-1.5 rounded-full transition ${settings.plp_showVideo !== false ? "text-emerald-500" : "text-slate-400"}`}
+                >
+                  {settings.plp_showVideo !== false ? <ToggleRight className="w-9 h-9" /> : <ToggleLeft className="w-9 h-9" />}
                 </button>
               </div>
 
