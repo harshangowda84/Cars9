@@ -47,6 +47,15 @@ export default function ProductDetailPage() {
   const [isHovered, setIsHovered] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
+  // Media gallery: 5 to 6 images + 1 video as the final slide
+  const imageList = product?.images && product.images.length > 0 
+    ? product.images 
+    : [product?.imageUrl || "/images/placeholder.jpg"];
+
+  const hasVideo = Boolean(product?.videoUrl) && (settings.pdp_showVideoPlayer !== false);
+  const isViewingVideo = hasVideo && activeMediaIndex === imageList.length;
+  const isInCart = product ? items.some((i) => i.id === product.id) : false;
+
   useEffect(() => {
     async function loadProduct() {
       if (!id) return;
@@ -76,6 +85,15 @@ export default function ProductDetailPage() {
     loadProduct();
   }, [id]);
 
+  // Auto-play slideshow every 2 seconds (pauses on hover or when video is viewed)
+  useEffect(() => {
+    if (!product || isViewingVideo || isHovered || imageList.length <= 1) return;
+    const interval = setInterval(() => {
+      setActiveMediaIndex((prev) => (prev + 1) % imageList.length);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [product, isViewingVideo, isHovered, imageList.length]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-[#080b11] text-slate-900 dark:text-slate-100 flex flex-col">
@@ -103,24 +121,6 @@ export default function ProductDetailPage() {
       </div>
     );
   }
-
-  // Media gallery: 5 to 6 images + 1 video as the final slide
-  const imageList = product.images && product.images.length > 0 
-    ? product.images 
-    : [product.imageUrl || "/images/placeholder.jpg"];
-
-  const hasVideo = Boolean(product.videoUrl) && (settings.pdp_showVideoPlayer !== false);
-  const isViewingVideo = hasVideo && activeMediaIndex === imageList.length;
-  const isInCart = items.some((i) => i.id === product.id);
-
-  // Auto-play slideshow every 2 seconds (pauses on hover or when video is viewed)
-  useEffect(() => {
-    if (isViewingVideo || isHovered || imageList.length <= 1) return;
-    const interval = setInterval(() => {
-      setActiveMediaIndex((prev) => (prev + 1) % imageList.length);
-    }, 2000);
-    return () => clearInterval(interval);
-  }, [isViewingVideo, isHovered, imageList.length]);
 
   // WhatsApp Enquiry
   const handleShareWhatsApp = () => {
