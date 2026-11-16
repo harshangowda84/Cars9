@@ -46,11 +46,15 @@ interface QuotationData {
     category?: string;
     unitPrice?: number;
     laborCharge?: number;
+    installationCharge?: number;
     total?: number;
   }>;
   subtotal?: number;
   laborTotal?: number;
+  installationTotal?: number;
   discountAmount?: number;
+  isGstEnabled?: boolean;
+  customGstRate?: number;
   taxAmount?: number;
   grandTotal?: number;
   isPriced?: boolean;
@@ -102,6 +106,16 @@ function QuotationContent() {
         .finally(() => setLoading(false));
     }
   }, [idParam]);
+
+  // Auto-open print dialog when navigated from Admin Portal print action
+  useEffect(() => {
+    if (!loading && quotation && (searchParams.get("print") === "1" || searchParams.get("autoPrint") === "true")) {
+      const timer = setTimeout(() => {
+        window.print();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, quotation, searchParams]);
 
   // Pre-fill vehicle info from cart items if available
   useEffect(() => {
@@ -262,10 +276,14 @@ function QuotationContent() {
   if (quotation && quotation.isPriced) {
     const items = quotation.items || [];
     const subtotal = quotation.subtotal || 0;
-    const labor = quotation.laborTotal || 0;
+    const labor = quotation.installationTotal ?? quotation.laborTotal ?? 0;
     const discount = quotation.discountAmount || 0;
-    const gst = quotation.taxAmount || 0;
-    const grandTotal = quotation.grandTotal || 0;
+    const isGstEnabled = quotation.isGstEnabled !== undefined ? Boolean(quotation.isGstEnabled) : true;
+    const gstRate = quotation.customGstRate !== undefined ? Number(quotation.customGstRate) : 18;
+    const gst = isGstEnabled
+      ? (quotation.taxAmount !== undefined ? quotation.taxAmount : Math.round(Math.max(0, subtotal + labor - discount) * (gstRate / 100)))
+      : 0;
+    const grandTotal = quotation.grandTotal || (subtotal + labor - discount + gst);
 
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-[#080b11] text-slate-900 dark:text-slate-100 py-8 px-4 sm:px-6 lg:px-8 print:p-0 print:bg-white print:text-black">
@@ -385,14 +403,14 @@ function QuotationContent() {
                     <th className="py-3 px-4">Component & Specification</th>
                     <th className="py-3 px-3 text-center">Qty</th>
                     <th className="py-3 px-4 text-right">Unit Price</th>
-                    <th className="py-3 px-4 text-right">Studio Labor</th>
+                    <th className="py-3 px-4 text-right">Installation Charges</th>
                     <th className="py-3 px-4 text-right">Line Total</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                   {items.map((item, idx) => {
                     const uPrice = item.unitPrice || 0;
-                    const uLabor = item.laborCharge || 0;
+                    const uLabor = item.installationCharge ?? item.laborCharge ?? 0;
                     const lineTotal = (uPrice * item.quantity) + uLabor;
 
                     return (
@@ -441,7 +459,7 @@ function QuotationContent() {
                   <span className="font-bold">₹{subtotal.toLocaleString("en-IN")}</span>
                 </div>
                 <div className="flex justify-between py-1 text-slate-600 dark:text-slate-400">
-                  <span>Studio Bay Labor / Fitting:</span>
+                  <span>Installation Charges:</span>
                   <span className="font-bold">₹{labor.toLocaleString("en-IN")}</span>
                 </div>
                 {discount > 0 && (
@@ -450,10 +468,15 @@ function QuotationContent() {
                     <span>-₹{discount.toLocaleString("en-IN")}</span>
                   </div>
                 )}
-                {gst > 0 && (
+                {isGstEnabled ? (
                   <div className="flex justify-between py-1 text-slate-600 dark:text-slate-400">
-                    <span>GST (18%):</span>
+                    <span>GST ({gstRate}%):</span>
                     <span className="font-bold">₹{gst.toLocaleString("en-IN")}</span>
+                  </div>
+                ) : (
+                  <div className="flex justify-between py-1 text-slate-600 dark:text-slate-400">
+                    <span>GST:</span>
+                    <span className="font-bold text-amber-500">Exempted / 0%</span>
                   </div>
                 )}
                 <div className="flex justify-between py-3 border-t-2 border-slate-900 dark:border-white text-base font-black text-slate-900 dark:text-white">

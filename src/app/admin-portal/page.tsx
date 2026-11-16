@@ -1786,6 +1786,53 @@ Thank you for choosing Cars9 Studio!`;
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
+  const handleOpenPrintQuote = async () => {
+    if (!selectedEnquiry) return;
+    setSavingQuote(true);
+    try {
+      const payload = {
+        items: pricingItems.map((item) => ({
+          ...item,
+          laborCharge: Number(item.installationCharge ?? item.laborCharge) || 0,
+          installationCharge: Number(item.installationCharge ?? item.laborCharge) || 0,
+          total: (Number(item.unitPrice) || 0) * (Number(item.quantity) || 1) + (Number(item.installationCharge ?? item.laborCharge) || 0),
+        })),
+        subtotal: quoteSubtotal,
+        laborTotal: quoteInstallationTotal,
+        installationTotal: quoteInstallationTotal,
+        discountAmount: Number(quoteDiscount) || 0,
+        isGstEnabled,
+        customGstRate: Number(customGstRate) || 0,
+        taxAmount: quoteGst,
+        grandTotal: quoteGrandTotal,
+        isPriced: true,
+        status: "Priced & Dispatched",
+      };
+
+      const res = await fetch(`/api/quotations/${selectedEnquiry.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        const updated = await res.json();
+        setEnquiries((prev) =>
+          prev.map((q) => (q.id === selectedEnquiry.id ? { ...q, ...updated } : q))
+        );
+        setSelectedEnquiry(updated);
+        setQuoteSavedSuccess(true);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSavingQuote(false);
+    }
+
+    // Opens the customer preview link bill in dedicated print mode
+    window.open(`/quotation?id=${selectedEnquiry.id}&print=1`, "_blank");
+  };
+
   const handlePrintQuotation = () => {
     if (!selectedEnquiry) return;
 
@@ -4967,9 +5014,9 @@ Thank you for choosing Cars9 Studio!`;
                         </button>
 
                         <button
-                          onClick={() => setShowPrintQuoteModal(true)}
+                          onClick={handleOpenPrintQuote}
                           className="py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer"
-                          title="Print official quotation / save as PDF"
+                          title="Print official quotation matching customer bill"
                         >
                           <Printer className="w-4 h-4 shrink-0" />
                           <span>Print Quotation</span>
@@ -7828,53 +7875,27 @@ Thank you for choosing Cars9 Studio!`;
         )}
 
         {/* ================================================================= */}
-        {/* PRINTABLE QUOTATION MODAL (Admin & Staff Formal Printable Sheet) */}
+        {/* PRINTABLE QUOTATION MODAL (Matching Customer Preview Bill 1:1)   */}
         {/* ================================================================= */}
         {showPrintQuoteModal && selectedEnquiry && (
           <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm overflow-y-auto flex items-center justify-center p-4 print:p-0 print:bg-white print:static">
-            <style>{`
-              @media print {
-                body * {
-                  visibility: hidden !important;
-                }
-                #quotation-print-sheet, #quotation-print-sheet * {
-                  visibility: visible !important;
-                }
-                #quotation-print-sheet {
-                  position: absolute !important;
-                  left: 0 !important;
-                  top: 0 !important;
-                  width: 100% !important;
-                  margin: 0 !important;
-                  padding: 24px !important;
-                  background: white !important;
-                  color: #0f172a !important;
-                  box-shadow: none !important;
-                  border: none !important;
-                }
-                .no-print {
-                  display: none !important;
-                }
-              }
-            `}</style>
-
-            <div className="relative w-full max-w-3xl space-y-4 my-8 print:my-0">
-              {/* Action Bar (Hidden in Print) */}
-              <div className="no-print flex items-center justify-between bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-xl border border-slate-700">
+            <div className="relative w-full max-w-4xl space-y-4 my-8">
+              {/* Action Bar */}
+              <div className="no-print flex flex-wrap items-center justify-between gap-3 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-xl border border-slate-700">
                 <div className="flex items-center gap-2">
-                  <Printer className="w-4 h-4 text-blue-400" />
+                  <Printer className="w-4 h-4 text-red-500" />
                   <span className="text-xs font-mono font-bold uppercase tracking-wider">
-                    Official Quotation Print Preview
+                    Official Studio Quotation Invoice Preview
                   </span>
                 </div>
                 <div className="flex items-center gap-2.5">
                   <button
                     type="button"
-                    onClick={handlePrintQuotation}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md transition active:scale-95 cursor-pointer"
+                    onClick={handleOpenPrintQuote}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md transition active:scale-95 cursor-pointer"
                   >
                     <Printer className="w-3.5 h-3.5" />
-                    <span>Print Now / Save PDF</span>
+                    <span>Print Official PDF</span>
                   </button>
                   <button
                     type="button"
@@ -7887,109 +7908,111 @@ Thank you for choosing Cars9 Studio!`;
                 </div>
               </div>
 
-              {/* Printable Invoice Sheet */}
-              <div
-                id="quotation-print-sheet"
-                className="bg-white text-slate-900 rounded-2xl shadow-2xl border border-slate-200 p-8 space-y-6 font-sans"
-              >
-                {/* Header with Official Studio Logo */}
-                <div className="flex items-start justify-between border-b border-slate-200 pb-5">
-                  <div className="space-y-1">
-                    <img
-                      src={settings?.site_logo_url || "/images/cars9-logo.png"}
-                      alt="Cars9 Logo"
-                      className="h-12 w-auto object-contain mb-1.5 drop-shadow-sm"
-                    />
-                    <div className="text-xs font-black tracking-tight text-red-600 uppercase">
-                      CARS9 BESPOKE AUTOMOTIVE STUDIO
+              {/* OFFICIAL STUDIO QUOTATION INVOICE (Exact match to Customer Preview Bill) */}
+              <div className="bg-white dark:bg-[#0f1523] border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-10 shadow-2xl relative overflow-hidden text-slate-900 dark:text-slate-100">
+                
+                {/* Top Invoice Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-8 border-b border-slate-200 dark:border-slate-800">
+                  <div className="space-y-2">
+                    <Cars9Logo size="md" href="/" />
+                    <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                      Custom Automotive Studio • Precision Coupler Fitment • Dust-Free Bay
+                    </p>
+                    <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1.5 font-mono">
+                      <ShieldCheck className="w-4 h-4" />
+                      <span>100% Zero Wire Slicing Guarantee</span>
                     </div>
-                    <p className="text-xs font-semibold text-slate-600">
-                      Bespoke Automotive Architecture & Premium Fitments
-                    </p>
-                    <p className="text-[11px] text-slate-500 font-mono">
-                      Phone: {settings.whatsapp_dispatch_phone || settings.whatsapp_master_phone || settings.footer_phone || "+91 90000 00000"} • Web: {typeof window !== "undefined" ? window.location.origin : "cars9.com"}
-                    </p>
                   </div>
 
-                  <div className="text-right space-y-1 font-mono">
-                    <div className="text-sm font-bold text-slate-800 uppercase tracking-wider">
-                      Official Estimate
+                  <div className="text-left sm:text-right space-y-1">
+                    <div className="inline-block px-3 py-1 rounded-full text-xs font-mono font-bold bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">
+                      QUOTATION REF: {selectedEnquiry.id}
                     </div>
-                    <div className="text-xs text-slate-600">
-                      Ref: <span className="font-bold text-slate-900">{selectedEnquiry.id}</span>
+                    <div className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+                      Date: {new Date(selectedEnquiry.createdAt || Date.now()).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
                     </div>
-                    <div className="text-xs text-slate-600">
-                      Date: {new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
-                    </div>
-                    <div className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                      PRICED ESTIMATE
+                    <div className="text-[11px] text-slate-400 font-mono">
+                      Valid for: 15 Days from Date of Issue
                     </div>
                   </div>
                 </div>
 
-                {/* Customer & Vehicle Details */}
-                <div className="grid grid-cols-2 gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs">
-                  <div className="space-y-1">
+                {/* Customer & Vehicle Information Block */}
+                <div className="my-8 grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 dark:bg-[#161e31]/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-800">
+                  <div className="space-y-1.5 text-xs">
                     <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 block">
-                      Customer Information
+                      CLIENT DETAILS
                     </span>
-                    <div className="font-bold text-slate-900 text-sm">{selectedEnquiry.customerName}</div>
-                    <div className="font-mono text-slate-600">Phone: {selectedEnquiry.customerPhone || "N/A"}</div>
+                    <div className="font-extrabold text-sm text-slate-900 dark:text-white">
+                      {selectedEnquiry.customerName}
+                    </div>
+                    <div className="text-slate-600 dark:text-slate-400 font-mono">
+                      Phone: {selectedEnquiry.customerPhone}
+                    </div>
                     {selectedEnquiry.customerEmail && (
-                      <div className="font-mono text-slate-600">Email: {selectedEnquiry.customerEmail}</div>
+                      <div className="text-slate-600 dark:text-slate-400 font-mono">
+                        Email: {selectedEnquiry.customerEmail}
+                      </div>
                     )}
                   </div>
 
-                  <div className="space-y-1">
+                  <div className="space-y-1.5 text-xs">
                     <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 block">
-                      Vehicle Fitment
+                      VEHICLE SPECIFICATION & FITMENT
                     </span>
-                    <div className="font-bold text-slate-900 text-sm">
+                    <div className="font-extrabold text-sm text-slate-900 dark:text-white">
                       {selectedEnquiry.vehicleBrand} {selectedEnquiry.vehicleModel}
                     </div>
-                    <div className="font-mono text-slate-600">
-                      Model Year: {selectedEnquiry.vehicleYear || "All Compatible Years"}
-                    </div>
-                    <div className="font-mono text-slate-500 text-[11px]">
-                      Coupler-to-coupler plug & play installation
-                    </div>
+                    {selectedEnquiry.vehicleYear && (
+                      <div className="text-slate-600 dark:text-slate-400 font-mono">
+                        Model Year: {selectedEnquiry.vehicleYear}
+                      </div>
+                    )}
+                    {selectedEnquiry.notes && (
+                      <div className="text-slate-500 dark:text-slate-400 italic text-[11px] mt-1">
+                        Special notes: &ldquo;{selectedEnquiry.notes}&rdquo;
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Itemized Table */}
-                <div className="overflow-hidden rounded-xl border border-slate-200">
-                  <table className="w-full text-left text-xs">
+                {/* Itemized Table With Confirmed Pricing */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
                     <thead>
-                      <tr className="bg-slate-100 border-b border-slate-200 text-slate-700 font-mono text-[11px] uppercase">
-                        <th className="py-2.5 px-3">#</th>
-                        <th className="py-2.5 px-3">Component / Accessory</th>
-                        <th className="py-2.5 px-3 text-center">Qty</th>
-                        <th className="py-2.5 px-3 text-right">Unit Price</th>
-                        <th className="py-2.5 px-3 text-right">Installation</th>
-                        <th className="py-2.5 px-3 text-right">Total</th>
+                      <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400 font-mono uppercase text-[10px] tracking-wider">
+                        <th className="py-3 px-2">#</th>
+                        <th className="py-3 px-4">Component & Specification</th>
+                        <th className="py-3 px-3 text-center">Qty</th>
+                        <th className="py-3 px-4 text-right">Unit Price</th>
+                        <th className="py-3 px-4 text-right">Installation Charges</th>
+                        <th className="py-3 px-4 text-right">Line Total</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-200 font-mono">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                       {pricingItems.map((item, idx) => {
-                        const lineItemTotal =
-                          (Number(item.unitPrice) || 0) * (Number(item.quantity) || 1) +
-                          (Number(item.installationCharge ?? item.laborCharge) || 0);
+                        const uPrice = Number(item.unitPrice) || 0;
+                        const uLabor = Number(item.installationCharge ?? item.laborCharge) || 0;
+                        const lineTotal = (uPrice * (Number(item.quantity) || 1)) + uLabor;
+
                         return (
-                          <tr key={idx} className="hover:bg-slate-50/50">
-                            <td className="py-2.5 px-3 text-slate-400 font-bold">{idx + 1}</td>
-                            <td className="py-2.5 px-3 font-sans">
-                              <div className="font-bold text-slate-900">{item.name}</div>
-                              {item.sku && <div className="text-[10px] font-mono text-slate-500">SKU: {item.sku}</div>}
+                          <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                            <td className="py-3.5 px-2 font-mono text-slate-400">{idx + 1}</td>
+                            <td className="py-3.5 px-4">
+                              <div className="font-bold text-slate-900 dark:text-white">{item.name}</div>
+                              <div className="text-[10px] font-mono text-slate-400">
+                                SKU: {item.sku} • {item.brand} {item.subbrand}
+                              </div>
                             </td>
-                            <td className="py-2.5 px-3 text-center font-bold">{item.quantity || 1}</td>
-                            <td className="py-2.5 px-3 text-right">
-                              ₹{(Number(item.unitPrice) || 0).toLocaleString("en-IN")}
+                            <td className="py-3.5 px-3 text-center font-mono font-bold">{item.quantity || 1}</td>
+                            <td className="py-3.5 px-4 text-right font-mono">
+                              ₹{uPrice.toLocaleString("en-IN")}
                             </td>
-                            <td className="py-2.5 px-3 text-right">
-                              ₹{(Number(item.installationCharge ?? item.laborCharge) || 0).toLocaleString("en-IN")}
+                            <td className="py-3.5 px-4 text-right font-mono text-slate-500">
+                              ₹{uLabor.toLocaleString("en-IN")}
                             </td>
-                            <td className="py-2.5 px-3 text-right font-bold text-slate-900">
-                              ₹{lineItemTotal.toLocaleString("en-IN")}
+                            <td className="py-3.5 px-4 text-right font-mono font-bold text-slate-900 dark:text-white">
+                              ₹{lineTotal.toLocaleString("en-IN")}
                             </td>
                           </tr>
                         );
@@ -7999,56 +8022,66 @@ Thank you for choosing Cars9 Studio!`;
                 </div>
 
                 {/* Financial Summary */}
-                <div className="flex justify-end">
-                  <div className="w-80 space-y-2 font-mono text-xs p-4 rounded-xl bg-slate-50 border border-slate-200">
-                    <div className="flex justify-between text-slate-600">
+                <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between gap-6">
+                  <div className="max-w-sm space-y-2 text-xs text-slate-500 dark:text-slate-400">
+                    <span className="font-bold text-slate-700 dark:text-slate-300 block uppercase font-mono text-[10px]">
+                      Installation Terms & Studio Protocol:
+                    </span>
+                    <p className="text-[11px] leading-relaxed">
+                      • 100% Coupler-to-coupler fitment. Zero wire splicing guarantee protects vehicle manufacturer warranty.
+                    </p>
+                    <p className="text-[11px] leading-relaxed">
+                      • All installations conducted in closed dust-free studio bays by certified master audio & electrical technicians.
+                    </p>
+                  </div>
+
+                  <div className="w-full sm:w-80 space-y-2 text-xs font-mono">
+                    <div className="flex justify-between py-1 text-slate-600 dark:text-slate-400">
                       <span>Components Subtotal:</span>
-                      <span className="font-bold text-slate-900">₹{quoteSubtotal.toLocaleString("en-IN")}</span>
+                      <span className="font-bold">₹{quoteSubtotal.toLocaleString("en-IN")}</span>
                     </div>
-                    <div className="flex justify-between text-slate-600">
+                    <div className="flex justify-between py-1 text-slate-600 dark:text-slate-400">
                       <span>Installation Charges:</span>
-                      <span className="font-bold text-slate-900">₹{quoteInstallationTotal.toLocaleString("en-IN")}</span>
+                      <span className="font-bold">₹{quoteInstallationTotal.toLocaleString("en-IN")}</span>
                     </div>
                     {Number(quoteDiscount) > 0 && (
-                      <div className="flex justify-between text-emerald-600 font-bold">
-                        <span>Studio Discount:</span>
+                      <div className="flex justify-between py-1 text-emerald-600 dark:text-emerald-400 font-bold">
+                        <span>Studio Promotional Discount:</span>
                         <span>-₹{Number(quoteDiscount).toLocaleString("en-IN")}</span>
                       </div>
                     )}
-                    <div className="flex justify-between text-slate-600">
-                      <span>{isGstEnabled ? `GST (${customGstRate}%):` : "GST:"}</span>
-                      <span className="font-bold text-slate-900">
-                        {isGstEnabled ? `₹${quoteGst.toLocaleString("en-IN")}` : "Exempted / 0%"}
+                    {isGstEnabled ? (
+                      <div className="flex justify-between py-1 text-slate-600 dark:text-slate-400">
+                        <span>GST ({customGstRate}%):</span>
+                        <span className="font-bold">₹{quoteGst.toLocaleString("en-IN")}</span>
+                      </div>
+                    ) : (
+                      <div className="flex justify-between py-1 text-slate-600 dark:text-slate-400">
+                        <span>GST:</span>
+                        <span className="font-bold text-amber-500">Exempted / 0%</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between py-3 border-t-2 border-slate-900 dark:border-white text-base font-black text-slate-900 dark:text-white">
+                      <span>GRAND TOTAL:</span>
+                      <span className="text-red-600 dark:text-red-400">
+                        ₹{quoteGrandTotal.toLocaleString("en-IN")}
                       </span>
                     </div>
-                    <div className="pt-2 border-t border-slate-300 flex justify-between text-base font-black text-slate-950">
-                      <span>GRAND TOTAL:</span>
-                      <span className="text-red-600">₹{quoteGrandTotal.toLocaleString("en-IN")}</span>
-                    </div>
                   </div>
                 </div>
 
-                {/* Studio Terms & Warranty Assurance */}
-                <div className="border-t border-slate-200 pt-4 text-[11px] text-slate-500 space-y-1">
-                  <div className="font-bold text-slate-700">Studio Guarantee & Installation Terms:</div>
-                  <ul className="list-disc pl-4 space-y-0.5 text-[10px]">
-                    <li>OEM wiring integrity preserved with dedicated coupler-to-coupler harness connectors.</li>
-                    <li>Digital studio warranty card issued upon vehicle bay handover.</li>
-                    <li>Estimates valid for 15 days from issuance date. Bay slots subject to advance reservation.</li>
-                  </ul>
+                {/* Signature & Authorisation */}
+                <div className="mt-12 pt-8 border-t border-slate-200 dark:border-slate-800 flex justify-between items-end text-xs text-slate-400 font-mono">
+                  <div>
+                    <span>Authorized Studio Technician / Bay Lead</span>
+                    <div className="h-10 border-b border-dashed border-slate-300 dark:border-slate-700 w-48 mt-1" />
+                  </div>
+                  <div className="text-right">
+                    <span className="text-red-600 font-bold">CARS9 STUDIO</span>
+                    <div>Bengaluru, Karnataka, India</div>
+                  </div>
                 </div>
 
-                {/* Signature Block */}
-                <div className="pt-6 flex justify-between items-end border-t border-slate-200 text-xs">
-                  <div className="space-y-8">
-                    <div className="h-0.5 w-40 bg-slate-300" />
-                    <span className="text-[11px] font-mono text-slate-600">Customer Signature / Acceptance</span>
-                  </div>
-                  <div className="space-y-8 text-right">
-                    <div className="h-0.5 w-48 bg-slate-300 ml-auto" />
-                    <span className="text-[11px] font-mono text-slate-600">Authorized Signatory • Cars9 Studio</span>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
