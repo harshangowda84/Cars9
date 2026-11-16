@@ -51,8 +51,8 @@ export function Navbar({ searchQuery, onSearchChange, searchResults = [], onSele
 
   return (
     <header className="sticky top-0 z-40 w-full backdrop-blur-xl bg-white/80 dark:bg-[#080b11]/85 border-b border-slate-200/80 dark:border-slate-800/80 transition-colors">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20 gap-4 sm:gap-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-15 sm:h-20 gap-2 sm:gap-6">
           
           {/* Brand Logo Lockup */}
           <Cars9Logo size="md" />
@@ -125,50 +125,50 @@ export function Navbar({ searchQuery, onSearchChange, searchResults = [], onSele
           </div>
 
           {/* Navigation Action Buttons */}
-          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+          <div className="flex items-center gap-1 sm:gap-2.5 shrink-0">
             
-            {/* Warranty Status Link - Visible on ALL devices */}
+            {/* Warranty Status Link - With visible title on all devices */}
             <Link
               href="/warranty"
-              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition"
+              className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition shadow-xs shrink-0"
               title="Verify or Register Digital Warranty"
             >
-              <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
-              <span className="hidden sm:inline">Warranty</span>
+              <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500 shrink-0" />
+              <span>Warranty</span>
             </Link>
 
-            {/* Direct Quotation Link */}
+            {/* Direct Quotation Link - With visible title on all devices */}
             <Link
               href="/quotation"
-              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition"
+              className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition shadow-xs shrink-0"
               title="View & Share Quotation"
             >
-              <FileText className="w-4 h-4 text-red-500 shrink-0" />
-              <span className="hidden sm:inline">Quotation</span>
+              <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500 shrink-0" />
+              <span>Quotation</span>
             </Link>
 
             {/* Dark & Light Theme Switcher */}
             <button
               onClick={toggleTheme}
               aria-label="Toggle theme"
-              className="p-2 sm:p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+              className="p-1.5 sm:p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition shrink-0"
             >
               {theme === "dark" ? (
-                <Sun className="w-4 h-4 text-amber-400" />
+                <Sun className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
               ) : (
-                <Moon className="w-4 h-4 text-slate-700" />
+                <Moon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-700" />
               )}
             </button>
 
             {/* Enquiry Cart Trigger Button */}
             <button
               onClick={() => setIsCartDrawerOpen(true)}
-              className="relative flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-lg shadow-red-600/25 active:scale-95 transition"
+              className="relative flex items-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-[11px] sm:text-xs font-bold shadow-lg shadow-red-600/25 active:scale-95 transition shrink-0"
             >
-              <ShoppingBag className="w-4 h-4 shrink-0" />
-              <span className="hidden sm:inline">Enquiries</span>
+              <ShoppingBag className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span className="hidden md:inline">Enquiries</span>
               {totalItems > 0 && (
-                <span className="flex items-center justify-center min-w-5 h-5 px-1.5 text-[10px] font-black bg-white text-red-600 rounded-full">
+                <span className="flex items-center justify-center min-w-4 sm:min-w-5 h-4 sm:h-5 px-1 text-[9px] sm:text-[10px] font-black bg-white text-red-600 rounded-full">
                   {totalItems}
                 </span>
               )}
@@ -179,7 +179,7 @@ export function Navbar({ searchQuery, onSearchChange, searchResults = [], onSele
         </div>
 
         {/* Mobile Search Bar Row */}
-        <div className="pb-3 md:hidden">
+        <div className="pb-2.5 pt-0.5 md:hidden">
           <form onSubmit={handleSearchSubmit} className="relative">
             <input
               type="text"

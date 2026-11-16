@@ -46,11 +46,11 @@ export function ProductListing({
   const { settings } = useSettings();
 
   return (
-    <section id="catalog" className={`w-full ${hideHeader ? "pt-2 pb-16" : "pt-10 pb-16"}`}>
+    <section id="catalog" className={`w-full ${hideHeader ? "pt-1 pb-10 sm:pb-16" : "pt-4 sm:pt-10 pb-10 sm:pb-16"}`}>
       
       {/* Category Navigation Pills & Header */}
       {!hideHeader && (
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-5 mb-8 pb-4 border-b border-slate-200/80 dark:border-slate-800/80">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 sm:gap-5 mb-4 sm:mb-8 pb-2.5 sm:pb-4 border-b border-slate-200/80 dark:border-slate-800/80">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-[10px] font-mono font-bold tracking-widest text-red-600 dark:text-red-400 uppercase">
@@ -61,22 +61,22 @@ export function ProductListing({
                 {products.length} Products Available
               </span>
             </div>
-            <h2 className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+            <h2 className="text-lg sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
               Precision Automotive Accessories
             </h2>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-xl">
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-1 max-w-xl">
               Custom engineered upgrades with 100% coupler-to-coupler fitment. Zero factory harness splicing.
             </p>
           </div>
 
           {/* Category Pill Tabs (Admin On/Off Controlled) */}
           {settings.plp_showCategoryTabs && (
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-none">
               {CATEGORIES.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => onCategoryChange(cat)}
-                  className={`px-4 py-2 rounded-2xl text-xs font-bold whitespace-nowrap transition-all ${
+                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs font-bold whitespace-nowrap transition-all ${
                     selectedCategory === cat
                       ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-md scale-102"
                       : "bg-white dark:bg-[#0f1523] border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-400 dark:hover:border-slate-700"
@@ -92,14 +92,14 @@ export function ProductListing({
 
       {/* PLP Product Grid: Pictures Only, NO PRICES */}
       {products.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 sm:gap-6">
           {products.map((item) => {
             const isAdded = items.some((cartItem) => cartItem.id === item.id);
 
             return (
               <div
                 key={item.id}
-                className="group relative flex flex-col justify-between bg-white dark:bg-[#0f1523] rounded-3xl border border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 shadow-sm hover:shadow-2xl transition-all duration-300 overflow-hidden"
+                className="group relative flex flex-col justify-between bg-white dark:bg-[#0f1523] rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 shadow-sm hover:shadow-2xl transition-all duration-300 overflow-hidden"
               >
                 {/* Image Container with Link to Standalone PDP */}
                 <Link

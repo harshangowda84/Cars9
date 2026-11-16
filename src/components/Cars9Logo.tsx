@@ -15,11 +15,11 @@ export function Cars9Logo({
   href = "/",
   showTagline = true,
 }: Cars9LogoProps) {
-  // Height and width constraints based on size
+  // Height and width constraints based on size (prominent & crisp on all screens)
   const sizeStyles = {
-    sm: "h-8 sm:h-9 w-auto",
-    md: "h-10 sm:h-12 w-auto",
-    lg: "h-14 sm:h-16 w-auto",
+    sm: "h-9 sm:h-10 w-auto",
+    md: "h-12 sm:h-14 w-auto",
+    lg: "h-16 sm:h-20 w-auto",
   };
 
   const logoImage = (
