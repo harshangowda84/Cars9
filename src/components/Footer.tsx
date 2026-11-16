@@ -231,19 +231,26 @@ export function Footer({ onSelectCategory }: FooterProps) {
                       </svg>
                     </a>
                   )}
-                  {settings.footer_social_whatsapp && (
-                    <a
-                      href={settings.footer_social_whatsapp}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-8 h-8 rounded-xl bg-[#25D366] text-white flex items-center justify-center shadow-md shadow-[#25D366]/30 hover:scale-110 hover:-translate-y-0.5 transition-all duration-200"
-                      title="WhatsApp"
-                    >
-                      <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                        <path d="M12.031 2C6.495 2 2 6.494 2 12.03c0 1.97.57 3.81 1.554 5.37L2 22l4.77-1.523A9.975 9.975 0 0 0 12.031 22c5.535 0 10.03-4.494 10.03-10.03C22.062 6.494 17.566 2 12.031 2zm5.82 14.28c-.24.67-1.39 1.28-1.92 1.34-.49.06-1.12.08-3.6-1.02-2.98-1.32-4.88-4.37-5.03-4.57-.15-.2-1.2-1.6-1.2-3.05 0-1.45.75-2.16 1.02-2.45.27-.29.59-.36.79-.36.2 0 .4 0 .58.01.19.01.44-.07.69.52.26.61.88 2.14.96 2.3.08.15.13.34.02.54-.1.2-.16.32-.31.5-.15.18-.32.4-.46.54-.15.15-.31.32-.13.63.18.31.79 1.3 1.7 2.11 1.17 1.04 2.15 1.36 2.46 1.51.31.15.49.13.67-.08.18-.21.78-.91.99-1.22.21-.31.42-.26.71-.15.29.11 1.84.87 2.15 1.03.31.15.52.23.6.36.08.14.08.79-.16 1.46z" />
-                      </svg>
-                    </a>
-                  )}
+                  {(() => {
+                    const rawTarget = settings.whatsapp_footer_phone || settings.whatsapp_master_phone || settings.footer_social_whatsapp;
+                    if (!rawTarget) return null;
+                    const footerWhatsappUrl = rawTarget.startsWith("http")
+                      ? rawTarget
+                      : `https://wa.me/${rawTarget.replace(/\D/g, "")}`;
+                    return (
+                      <a
+                        href={footerWhatsappUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-8 h-8 rounded-xl bg-[#25D366] text-white flex items-center justify-center shadow-md shadow-[#25D366]/30 hover:scale-110 hover:-translate-y-0.5 transition-all duration-200"
+                        title="Chat with Cars9 Studio on WhatsApp"
+                      >
+                        <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                          <path d="M12.031 2C6.495 2 2 6.494 2 12.03c0 1.97.57 3.81 1.554 5.37L2 22l4.77-1.523A9.975 9.975 0 0 0 12.031 22c5.535 0 10.03-4.494 10.03-10.03C22.062 6.494 17.566 2 12.031 2zm5.82 14.28c-.24.67-1.39 1.28-1.92 1.34-.49.06-1.12.08-3.6-1.02-2.98-1.32-4.88-4.37-5.03-4.57-.15-.2-1.2-1.6-1.2-3.05 0-1.45.75-2.16 1.02-2.45.27-.29.59-.36.79-.36.2 0 .4 0 .58.01.19.01.44-.07.69.52.26.61.88 2.14.96 2.3.08.15.13.34.02.54-.1.2-.16.32-.31.5-.15.18-.32.4-.46.54-.15.15-.31.32-.13.63.18.31.79 1.3 1.7 2.11 1.17 1.04 2.15 1.36 2.46 1.51.31.15.49.13.67-.08.18-.21.78-.91.99-1.22.21-.31.42-.26.71-.15.29.11 1.84.87 2.15 1.03.31.15.52.23.6.36.08.14.08.79-.16 1.46z" />
+                        </svg>
+                      </a>
+                    );
+                  })()}
                   {settings.footer_social_twitter && (
                     <a
                       href={settings.footer_social_twitter}

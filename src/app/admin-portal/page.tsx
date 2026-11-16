@@ -316,6 +316,17 @@ export default function AdminPortalPage() {
   const [uploadingSiteLogo, setUploadingSiteLogo] = useState(false);
   const [customLogoUrlInput, setCustomLogoUrlInput] = useState("");
 
+  // Dedicated WhatsApp Routing States
+  const [isWhatsAppDropdownOpen, setIsWhatsAppDropdownOpen] = useState(false);
+  const [whatsappMasterInput, setWhatsappMasterInput] = useState("");
+  const [whatsappCardInput, setWhatsappCardInput] = useState("");
+  const [whatsappFooterInput, setWhatsappFooterInput] = useState("");
+  const [whatsappPdpInput, setWhatsappPdpInput] = useState("");
+  const [whatsappQuotationInput, setWhatsappQuotationInput] = useState("");
+  const [whatsappSavedMsg, setWhatsappSavedMsg] = useState("");
+  const [whatsappAppliedMsg, setWhatsappAppliedMsg] = useState("");
+  const [savingWhatsApp, setSavingWhatsApp] = useState(false);
+
   // Default Fallback Banner Form State (Pre-populated defaults)
   const DEFAULT_BANNER_CONFIG = {
     title1: "ELEVATE YOUR CAR WITH",
@@ -1696,6 +1707,11 @@ Thank you for choosing Cars9 Studio!`;
         socialTwitter: settings.footer_social_twitter || "",
       });
       setCustomLogoUrlInput(settings.site_logo_url || "");
+      setWhatsappMasterInput(settings.whatsapp_master_phone || "+91 90000 00000");
+      setWhatsappCardInput(settings.whatsapp_card_phone || "");
+      setWhatsappFooterInput(settings.whatsapp_footer_phone || "");
+      setWhatsappPdpInput(settings.whatsapp_pdp_phone || "");
+      setWhatsappQuotationInput(settings.whatsapp_quotation_phone || "");
       setDefaultBannerForm({
         title1: settings.default_banner_title1 || "ELEVATE YOUR CAR WITH",
         title2: settings.default_banner_title2 || "CUSTOM ACCESSORIES",
@@ -1836,6 +1852,49 @@ Thank you for choosing Cars9 Studio!`;
       setTimeout(() => setFooterSavedMsg(""), 4000);
     } catch (err: any) {
       alert("Failed to save footer settings: " + err.message);
+    }
+  };
+
+  const handleApplyMasterToAll = () => {
+    const val = whatsappMasterInput.trim();
+    if (!val) {
+      showToastNotice("Please enter a Master WhatsApp number first", "error");
+      return;
+    }
+    setWhatsappCardInput(val);
+    setWhatsappFooterInput(val);
+    setWhatsappPdpInput(val);
+    setWhatsappQuotationInput(val);
+    setWhatsappAppliedMsg("✓ Master number applied to all 4 touchpoints! Click Save to apply.");
+    setTimeout(() => setWhatsappAppliedMsg(""), 4000);
+  };
+
+  const handleSaveWhatsAppNumbers = async () => {
+    setSavingWhatsApp(true);
+    try {
+      await updateSetting("whatsapp_master_phone", whatsappMasterInput.trim());
+      await updateSetting("whatsapp_card_phone", whatsappCardInput.trim());
+      await updateSetting("whatsapp_footer_phone", whatsappFooterInput.trim());
+      await updateSetting("whatsapp_pdp_phone", whatsappPdpInput.trim());
+      await updateSetting("whatsapp_quotation_phone", whatsappQuotationInput.trim());
+
+      // If footer WhatsApp number or master number was provided, also sync footer_social_whatsapp
+      const effectiveFooter = whatsappFooterInput.trim() || whatsappMasterInput.trim();
+      if (effectiveFooter) {
+        const formattedFooter = effectiveFooter.startsWith("http")
+          ? effectiveFooter
+          : `https://wa.me/${effectiveFooter.replace(/\D/g, "")}`;
+        await updateSetting("footer_social_whatsapp", formattedFooter);
+        setFooterForm((prev) => ({ ...prev, socialWhatsapp: formattedFooter }));
+      }
+
+      setWhatsappSavedMsg("WhatsApp routing numbers saved successfully!");
+      showToastNotice("WhatsApp configuration updated successfully!", "success");
+      setTimeout(() => setWhatsappSavedMsg(""), 4000);
+    } catch (err: any) {
+      alert("Failed to save WhatsApp settings: " + err.message);
+    } finally {
+      setSavingWhatsApp(false);
     }
   };
 
@@ -6034,15 +6093,244 @@ Thank you for choosing Cars9 Studio!`;
         {/* ================================================================= */}
         {activeTab === "branding_footer" && authRole === "admin" && (
           <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-200">
-            <div>
-              <h2 className="text-xl font-bold flex items-center gap-2">
-                <ImageIcon className="w-5 h-5 text-red-500" />
-                <span>Site Branding & Footer Information Control</span>
-              </h2>
-              <p className="text-xs opacity-60 mt-0.5">
-                Update the official site logo across header and footer, and customize all company details in the storefront footer.
-              </p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-bold flex items-center gap-2">
+                  <ImageIcon className="w-5 h-5 text-red-500" />
+                  <span>Site Branding & Footer Information Control</span>
+                </h2>
+                <p className="text-xs opacity-60 mt-0.5">
+                  Update the official site logo across header and footer, customize company details, and configure WhatsApp routing numbers.
+                </p>
+              </div>
+
+              {/* Dedicated WhatsApp Button with Status Pill */}
+              <button
+                type="button"
+                onClick={() => setIsWhatsAppDropdownOpen(!isWhatsAppDropdownOpen)}
+                className={`px-4 py-2.5 rounded-2xl font-bold text-xs shadow-lg transition active:scale-95 flex items-center gap-2.5 shrink-0 cursor-pointer ${
+                  isWhatsAppDropdownOpen
+                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 shadow-slate-900/20"
+                    : "bg-[#25D366] hover:bg-[#20ba59] text-white shadow-[#25D366]/25"
+                }`}
+                title="Open WhatsApp number routing configuration"
+              >
+                <div className="w-4 h-4 flex items-center justify-center">
+                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                    <path d="M12.031 2C6.495 2 2 6.494 2 12.03c0 1.97.57 3.81 1.554 5.37L2 22l4.77-1.523A9.975 9.975 0 0 0 12.031 22c5.535 0 10.03-4.494 10.03-10.03C22.062 6.494 17.566 2 12.031 2zm5.82 14.28c-.24.67-1.39 1.28-1.92 1.34-.49.06-1.12.08-3.6-1.02-2.98-1.32-4.88-4.37-5.03-4.57-.15-.2-1.2-1.6-1.2-3.05 0-1.45.75-2.16 1.02-2.45.27-.29.59-.36.79-.36.2 0 .4 0 .58.01.19.01.44-.07.69.52.26.61.88 2.14.96 2.3.08.15.13.34.02.54-.1.2-.16.32-.31.5-.15.18-.32.4-.46.54-.15.15-.31.32-.13.63.18.31.79 1.3 1.7 2.11 1.17 1.04 2.15 1.36 2.46 1.51.31.15.49.13.67-.08.18-.21.78-.91.99-1.22.21-.31.42-.26.71-.15.29.11 1.84.87 2.15 1.03.31.15.52.23.6.36.08.14.08.79-.16 1.46z" />
+                  </svg>
+                </div>
+                <span>Configure WhatsApp Routing</span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isWhatsAppDropdownOpen ? "rotate-180" : ""}`} />
+              </button>
             </div>
+
+            {/* Dedicated WhatsApp Routing Dropdown Screen */}
+            {isWhatsAppDropdownOpen && (
+              <div className={`${cardClass} border-2 border-emerald-500/40 rounded-3xl p-6 sm:p-7 space-y-6 shadow-xl shadow-emerald-500/10 animate-in fade-in slide-in-from-top-3 duration-200`}>
+                <div className="flex items-start justify-between gap-3 pb-4 border-b border-slate-200 dark:border-slate-800">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-[#25D366]/15 text-[#25D366] flex items-center justify-center shrink-0">
+                      <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                        <path d="M12.031 2C6.495 2 2 6.494 2 12.03c0 1.97.57 3.81 1.554 5.37L2 22l4.77-1.523A9.975 9.975 0 0 0 12.031 22c5.535 0 10.03-4.494 10.03-10.03C22.062 6.494 17.566 2 12.031 2zm5.82 14.28c-.24.67-1.39 1.28-1.92 1.34-.49.06-1.12.08-3.6-1.02-2.98-1.32-4.88-4.37-5.03-4.57-.15-.2-1.2-1.6-1.2-3.05 0-1.45.75-2.16 1.02-2.45.27-.29.59-.36.79-.36.2 0 .4 0 .58.01.19.01.44-.07.69.52.26.61.88 2.14.96 2.3.08.15.13.34.02.54-.1.2-.16.32-.31.5-.15.18-.32.4-.46.54-.15.15-.31.32-.13.63.18.31.79 1.3 1.7 2.11 1.17 1.04 2.15 1.36 2.46 1.51.31.15.49.13.67-.08.18-.21.78-.91.99-1.22.21-.31.42-.26.71-.15.29.11 1.84.87 2.15 1.03.31.15.52.23.6.36.08.14.08.79-.16 1.46z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-base font-extrabold flex items-center gap-2">
+                        <span>WhatsApp Direct Numbers & Channel Routing</span>
+                      </h3>
+                      <p className="text-xs opacity-60 mt-0.5">
+                        Configure dedicated WhatsApp numbers for individual touchpoints or apply one master number to all.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsWhatsAppDropdownOpen(false)}
+                    className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-900 dark:hover:text-white transition"
+                    title="Close WhatsApp panel"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Notifications / Feedback */}
+                {whatsappAppliedMsg && (
+                  <div className="p-3.5 rounded-2xl bg-blue-500/10 border border-blue-500/30 text-blue-600 dark:text-blue-400 text-xs font-mono flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 shrink-0" />
+                    <span>{whatsappAppliedMsg}</span>
+                  </div>
+                )}
+                {whatsappSavedMsg && (
+                  <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 text-xs font-mono flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    <span>{whatsappSavedMsg}</span>
+                  </div>
+                )}
+
+                {/* Master Number Section with "Apply to All" */}
+                <div className="p-4 sm:p-5 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-500/30 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <label className="block text-xs font-extrabold uppercase tracking-wider font-mono text-emerald-700 dark:text-emerald-400">
+                        Master Studio WhatsApp Number
+                      </label>
+                      <p className="text-[11px] opacity-70 mt-0.5">
+                        Acts as the primary fallback for any touchpoint left blank.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleApplyMasterToAll}
+                      className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold transition shadow-md shadow-emerald-600/20 flex items-center gap-1.5 shrink-0 active:scale-95 cursor-pointer"
+                      title="Set this master number for Homepage Card, Footer, PDP and Quotation"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Apply to All (Set All to This Number)</span>
+                    </button>
+                  </div>
+
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={whatsappMasterInput}
+                      onChange={(e) => setWhatsappMasterInput(e.target.value)}
+                      placeholder="+91 90000 00000 / 919000000000"
+                      className={`w-full px-4 py-2.5 rounded-xl border text-xs font-mono ${inputClass}`}
+                    />
+                  </div>
+                </div>
+
+                {/* Individual Channel Settings Grid */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold uppercase tracking-wider font-mono opacity-80">
+                      Individual Channel Routing Numbers
+                    </h4>
+                    <span className="text-[10px] text-slate-400 font-mono">
+                      (Leave individual blank to use Master Number)
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* 1. Homepage Card */}
+                    <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2 bg-slate-50/50 dark:bg-slate-900/30">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold flex items-center gap-1.5">
+                          <span>1. Homepage Studio Card</span>
+                        </label>
+                        <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                          Homepage &apos;WhatsApp Studio&apos;
+                        </span>
+                      </div>
+                      <p className="text-[11px] opacity-60">
+                        Chat link on the quick consultation card below the hero banner.
+                      </p>
+                      <input
+                        type="text"
+                        value={whatsappCardInput}
+                        onChange={(e) => setWhatsappCardInput(e.target.value)}
+                        placeholder={`e.g. +91 98888 88888 (Fallback: ${whatsappMasterInput || "Master"})`}
+                        className={`w-full px-3 py-2 rounded-xl border text-xs font-mono ${inputClass}`}
+                      />
+                    </div>
+
+                    {/* 2. Storefront Footer Icon */}
+                    <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2 bg-slate-50/50 dark:bg-slate-900/30">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold flex items-center gap-1.5">
+                          <span>2. Footer Social Icon</span>
+                        </label>
+                        <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                          Footer WhatsApp Icon
+                        </span>
+                      </div>
+                      <p className="text-[11px] opacity-60">
+                        Direct link when visitors tap the colorful WhatsApp icon in the footer.
+                      </p>
+                      <input
+                        type="text"
+                        value={whatsappFooterInput}
+                        onChange={(e) => setWhatsappFooterInput(e.target.value)}
+                        placeholder={`e.g. +91 98888 88888 (Fallback: ${whatsappMasterInput || "Master"})`}
+                        className={`w-full px-3 py-2 rounded-xl border text-xs font-mono ${inputClass}`}
+                      />
+                    </div>
+
+                    {/* 3. PDP Enquire Button */}
+                    <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2 bg-slate-50/50 dark:bg-slate-900/30">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold flex items-center gap-1.5">
+                          <span>3. PDP Enquire Button</span>
+                        </label>
+                        <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-red-500/10 text-red-600 dark:text-red-400">
+                          Product Page Enquiry
+                        </span>
+                      </div>
+                      <p className="text-[11px] opacity-60">
+                        Receives product name, SKU, vehicle fitment & quotation request.
+                      </p>
+                      <input
+                        type="text"
+                        value={whatsappPdpInput}
+                        onChange={(e) => setWhatsappPdpInput(e.target.value)}
+                        placeholder={`e.g. +91 97777 77777 (Fallback: ${whatsappMasterInput || "Master"})`}
+                        className={`w-full px-3 py-2 rounded-xl border text-xs font-mono ${inputClass}`}
+                      />
+                    </div>
+
+                    {/* 4. Quotation Review Page */}
+                    <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2 bg-slate-50/50 dark:bg-slate-900/30">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold flex items-center gap-1.5">
+                          <span>4. Quotation Review Page</span>
+                        </label>
+                        <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                          Quotation Submit & Review
+                        </span>
+                      </div>
+                      <p className="text-[11px] opacity-60">
+                        Receives submitted customer quotation enquiries and cart summary.
+                      </p>
+                      <input
+                        type="text"
+                        value={whatsappQuotationInput}
+                        onChange={(e) => setWhatsappQuotationInput(e.target.value)}
+                        placeholder={`e.g. +91 96666 66666 (Fallback: ${whatsappMasterInput || "Master"})`}
+                        className={`w-full px-3 py-2 rounded-xl border text-xs font-mono ${inputClass}`}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bottom Action Buttons */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+                  <div className="text-[11px] opacity-60 font-mono text-center sm:text-left">
+                    Direct phone numbers support formatting with country codes (e.g. +91 90000 00000).
+                  </div>
+
+                  <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <button
+                      type="button"
+                      onClick={() => setIsWhatsAppDropdownOpen(false)}
+                      className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                    >
+                      Close
+                    </button>
+                    <button
+                      type="button"
+                      disabled={savingWhatsApp}
+                      onClick={handleSaveWhatsAppNumbers}
+                      className="flex-1 sm:flex-none px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-lg shadow-emerald-600/30 transition flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 cursor-pointer"
+                    >
+                      <Save className="w-4 h-4" />
+                      <span>{savingWhatsApp ? "Saving..." : "Save WhatsApp Numbers"}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* 1. Official Site Logo Management */}
             <div className={`${cardClass} border rounded-3xl p-6 sm:p-8 space-y-6`}>

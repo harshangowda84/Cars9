@@ -135,7 +135,8 @@ export default function ProductDetailPage() {
 *Vehicle Fitment:* ${product.brand} ${product.subbrand}
 *Category:* ${product.category}
 Please share custom quotation, studio bay availability & installation schedule.`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+    const targetPhone = (settings.whatsapp_pdp_phone || settings.whatsapp_master_phone || settings.footer_phone || "919000000000").replace(/\D/g, "");
+    window.open(`https://wa.me/${targetPhone}?text=${encodeURIComponent(text)}`, "_blank");
   };
 
   // Copy Direct Link

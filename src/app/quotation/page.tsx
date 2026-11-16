@@ -209,8 +209,8 @@ function QuotationContent() {
   };
 
   const handleWhatsAppContact = () => {
+    const targetPhone = (settings?.whatsapp_quotation_phone || settings?.whatsapp_master_phone || settings?.footer_phone || "919000000000").replace(/\D/g, "");
     if (!quotation) {
-      const targetPhone = (settings?.footer_phone || "919000000000").replace(/\D/g, "");
       window.open(`https://wa.me/${targetPhone}?text=${encodeURIComponent("Hello Cars9 Studio! I would like to request an estimate for vehicle accessories.")}`, "_blank");
       return;
     }
@@ -241,7 +241,6 @@ function QuotationContent() {
     ].filter((line) => line !== null);
 
     const message = messageLines.join("\n");
-    const targetPhone = (settings?.footer_phone || "919000000000").replace(/\D/g, "");
     window.open(`https://wa.me/${targetPhone}?text=${encodeURIComponent(message)}`, "_blank");
   };
 

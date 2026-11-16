@@ -29,6 +29,13 @@ export interface SiteSettings {
   footer_social_whatsapp?: string;
   footer_social_twitter?: string;
 
+  // WhatsApp Direct Routing Numbers
+  whatsapp_master_phone?: string;
+  whatsapp_card_phone?: string;
+  whatsapp_footer_phone?: string;
+  whatsapp_pdp_phone?: string;
+  whatsapp_quotation_phone?: string;
+
   // Fallback Default Hero Banner (Shown when no active banners)
   default_banner_title1?: string;
   default_banner_title2?: string;
@@ -90,6 +97,13 @@ const defaultSettings: SiteSettings = {
   footer_social_youtube: "https://youtube.com/@cars9studio",
   footer_social_whatsapp: "https://wa.me/919000000000",
   footer_social_twitter: "https://x.com/cars9studio",
+
+  // WhatsApp Direct Routing Numbers
+  whatsapp_master_phone: "+91 90000 00000",
+  whatsapp_card_phone: "",
+  whatsapp_footer_phone: "",
+  whatsapp_pdp_phone: "",
+  whatsapp_quotation_phone: "",
 
   default_banner_title1: "ELEVATE YOUR CAR WITH",
   default_banner_title2: "CUSTOM ACCESSORIES",
