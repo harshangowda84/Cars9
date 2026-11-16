@@ -7,6 +7,22 @@ export interface SiteSettings {
   admin_password?: string;
   staff_password?: string;
 
+  // Site Logo & Branding
+  site_logo_url?: string;
+  site_name?: string;
+
+  // Footer Information Controls
+  footer_description?: string;
+  footer_guarantee_text?: string;
+  footer_phone?: string;
+  footer_email?: string;
+  footer_address?: string;
+  footer_timings?: string;
+  footer_copyright?: string;
+  footer_show_warranty_link?: boolean;
+  footer_show_pricing_link?: boolean;
+  footer_show_admin_link?: boolean;
+
   // PLP Settings
   plp_showQuickPreview: boolean;
   plp_showCouplerBadge: boolean;
@@ -34,6 +50,20 @@ export interface SiteSettings {
 const defaultSettings: SiteSettings = {
   admin_password: "cars9pass",
   staff_password: "cars9staff",
+
+  site_logo_url: "/images/cars9-logo.png",
+  site_name: "CARS9 Automotive Studio",
+
+  footer_description: "India's premier custom automotive accessory studio. OEM coupler-to-coupler fitment, precision sound engineering, QLED digital touchscreens, and European laser optics.",
+  footer_guarantee_text: "100% Zero Wire Slicing Guarantee",
+  footer_phone: "+91 90000 00000 / +91 98888 88888",
+  footer_email: "concierge@cars9studio.com",
+  footer_address: "Main Studio Bay, HSR Layout / Indiranagar, Bangalore",
+  footer_timings: "Monday – Saturday: 10:00 AM – 8:30 PM\nSunday: By Prior Appointment Only\nDust-Free Closed Installation Bays\nPrecision Acoustic Calibration Bay",
+  footer_copyright: "© {year} CARS9 Automotive Studio. All rights reserved.",
+  footer_show_warranty_link: true,
+  footer_show_pricing_link: true,
+  footer_show_admin_link: true,
 
   plp_showQuickPreview: true,
   plp_showCouplerBadge: true,

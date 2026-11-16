@@ -10,6 +10,7 @@ import { VehicleSelector } from "@/components/VehicleSelector";
 import { ProductListing } from "@/components/ProductListing";
 import { ProductDetailModal } from "@/components/ProductDetailModal";
 import { Cars9Logo } from "@/components/Cars9Logo";
+import { Footer } from "@/components/Footer";
 import { useSettings } from "@/context/SettingsContext";
 import { 
   Car, 
@@ -436,101 +437,8 @@ function HomeContent() {
         }}
       />
 
-      {/* 4. Luxury Production Footer (Zero Admin Link Exposed) */}
-      <footer className="mt-20 border-t border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-[#0a0e18]/80 backdrop-blur-xl pt-14 pb-10 text-xs text-slate-500 dark:text-slate-400">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-10 pb-12 border-b border-slate-200 dark:border-slate-800">
-            
-            {/* Col 1: Studio Brand */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-red-600 text-white flex items-center justify-center font-bold">
-                  <Car className="w-4 h-4" />
-                </div>
-                <span className="text-xl font-black text-slate-900 dark:text-white font-mono">
-                  CARS<span className="text-red-600">9</span>
-                </span>
-              </div>
-              <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400 font-normal">
-                India&apos;s premier custom automotive accessory studio. OEM coupler-to-coupler fitment, precision sound engineering, QLED digital touchscreens, and European laser optics.
-              </p>
-              <div className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4" />
-                <span>100% Zero Wire Slicing Guarantee</span>
-              </div>
-            </div>
-
-            {/* Col 2: Categories */}
-            <div className="space-y-3">
-              <span className="text-xs font-mono font-bold text-slate-900 dark:text-white uppercase tracking-wider block">
-                Accessories Catalog
-              </span>
-              <ul className="space-y-2 text-xs">
-                <li><button onClick={() => setSelectedCategory("Infotainment & Audio")} className="hover:text-red-500 transition">DSP Audio & QLED Android Cockpits</button></li>
-                <li><button onClick={() => setSelectedCategory("Lighting & Electrical")} className="hover:text-red-500 transition">Bi-LED & European Laser Headlamps</button></li>
-                <li><button onClick={() => setSelectedCategory("Interior Styling")} className="hover:text-red-500 transition">64-Color Symphony Ambient & 7D Mats</button></li>
-                <li><button onClick={() => setSelectedCategory("Exterior Styling")} className="hover:text-red-500 transition">Dry Carbon Aero Kits & Diffusers</button></li>
-                <li><button onClick={() => setSelectedCategory("Car Care & Utility")} className="hover:text-red-500 transition">4K+2K Stealth Dashcams & Radars</button></li>
-              </ul>
-            </div>
-
-            {/* Col 3: Studio Bay Working Hours */}
-            <div className="space-y-3">
-              <span className="text-xs font-mono font-bold text-slate-900 dark:text-white uppercase tracking-wider block">
-                Studio Operations
-              </span>
-              <ul className="space-y-2 text-xs">
-                <li>Monday – Saturday: 10:00 AM – 8:30 PM</li>
-                <li>Sunday: By Prior Appointment Only</li>
-                <li>Dust-Free Closed Installation Bays</li>
-                <li>Precision Acoustic Calibration Bay</li>
-              </ul>
-            </div>
-
-            {/* Col 4: Studio Contact */}
-            <div className="space-y-3">
-              <span className="text-xs font-mono font-bold text-slate-900 dark:text-white uppercase tracking-wider block">
-                Studio Location & Support
-              </span>
-              <div className="space-y-2.5 text-xs">
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-red-500 shrink-0" />
-                  <span>Main Studio Bay, HSR Layout / Indiranagar, Bangalore</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-emerald-500 shrink-0" />
-                  <span>+91 90000 00000 / +91 98888 88888</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-sky-500 shrink-0" />
-                  <span>concierge@cars9studio.com</span>
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-          <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-400 font-mono">
-            <div>
-              © {new Date().getFullYear()} CARS9 Automotive Studio. All rights reserved.
-            </div>
-
-            <div className="flex items-center gap-4">
-              <Link href="/warranty" className="hover:text-red-500 transition">
-                Digital Warranty
-              </Link>
-              <span>•</span>
-              <Link href="/quotation?mode=owner" className="hover:text-amber-500 transition">
-                Owner Pricing Tool
-              </Link>
-              <span>•</span>
-              <Link href="/admin-portal" className="hover:text-slate-200 transition">
-                Admin Portal
-              </Link>
-            </div>
-          </div>
-        </div>
-      </footer>
+      {/* 4. Luxury Production Dynamic Footer */}
+      <Footer onSelectCategory={setSelectedCategory} />
 
     </div>
   );

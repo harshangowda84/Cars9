@@ -56,7 +56,9 @@ import {
   AlertTriangle,
   CheckSquare,
   Square,
-  Archive
+  Archive,
+  Menu,
+  Sparkles
 } from "lucide-react";
 import { Cars9Logo } from "@/components/Cars9Logo";
 import { getDisplayImageUrl } from "@/lib/imageUrl";
@@ -121,8 +123,8 @@ export default function AdminPortalPage() {
 
   // Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [authRole, setAuthRole] = useState<"admin" | "staff">("admin");
-  const [loginMode, setLoginMode] = useState<"admin" | "staff">("admin");
+  const [authRole, setAuthRole] = useState<"admin" | "staff">("staff");
+  const [loginMode, setLoginMode] = useState<"admin" | "staff">("staff");
   
   // Login Inputs
   const [username, setUsername] = useState("");
@@ -130,9 +132,20 @@ export default function AdminPortalPage() {
   const [staffPasswordInput, setStaffPasswordInput] = useState("");
   const [authError, setAuthError] = useState("");
 
-  // Tab State
-  type AdminTab = "banners" | "inventory" | "brands" | "enquiries" | "warranties" | "plp_settings" | "pdp_settings" | "security" | "uploader";
-  const [activeTab, setActiveTab] = useState<AdminTab>("banners");
+  // Tab State: First page is ALWAYS enquiries, second is ALWAYS warranties
+  type AdminTab = 
+    | "enquiries" 
+    | "warranties" 
+    | "inventory" 
+    | "brands" 
+    | "banners" 
+    | "plp_settings" 
+    | "pdp_settings" 
+    | "branding_footer" 
+    | "security" 
+    | "uploader";
+  const [activeTab, setActiveTab] = useState<AdminTab>("enquiries");
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   // Core Data States
   const [banners, setBanners] = useState<Banner[]>([]);
@@ -274,6 +287,26 @@ export default function AdminPortalPage() {
   const [passwordSavedMsg, setPasswordSavedMsg] = useState("");
 
   // -------------------------------------------------------------
+  // Branding & Footer Editor State
+  // -------------------------------------------------------------
+  const logoFileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const [footerForm, setFooterForm] = useState({
+    description: "",
+    guaranteeText: "",
+    phone: "",
+    email: "",
+    address: "",
+    timings: "",
+    copyright: "",
+    showWarranty: true,
+    showPricing: true,
+    showAdmin: true,
+  });
+  const [footerSavedMsg, setFooterSavedMsg] = useState("");
+  const [uploadingSiteLogo, setUploadingSiteLogo] = useState(false);
+  const [customLogoUrlInput, setCustomLogoUrlInput] = useState("");
+
+  // -------------------------------------------------------------
   // Telegram CDN & Media Uploader States
   // -------------------------------------------------------------
   const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -304,11 +337,7 @@ export default function AdminPortalPage() {
           if (data.authenticated && data.user) {
             setIsAuthenticated(true);
             setAuthRole(data.user.role || "admin");
-            if (data.user.role === "staff") {
-              setActiveTab("enquiries");
-            } else {
-              setActiveTab("banners");
-            }
+            setActiveTab("enquiries");
             fetchAllData();
           } else {
             setIsAuthenticated(false);
@@ -341,7 +370,7 @@ export default function AdminPortalPage() {
       if (res.ok && data.success) {
         setIsAuthenticated(true);
         setAuthRole("admin");
-        setActiveTab("banners");
+        setActiveTab("enquiries");
         setAuthError("");
         showToastNotice("Authenticated as Full Studio Admin", "success");
         fetchAllData();
@@ -1617,6 +1646,83 @@ Thank you for choosing Cars9 Studio!`;
     }
   };
 
+  // =========================================================================
+  // 5B. BRANDING & FOOTER CONTROLS
+  // =========================================================================
+  useEffect(() => {
+    if (settings) {
+      setFooterForm({
+        description: settings.footer_description || "India's premier custom automotive accessory studio. OEM coupler-to-coupler fitment, precision sound engineering, QLED digital touchscreens, and European laser optics.",
+        guaranteeText: settings.footer_guarantee_text || "100% Zero Wire Slicing Guarantee",
+        phone: settings.footer_phone || "+91 90000 00000 / +91 98888 88888",
+        email: settings.footer_email || "concierge@cars9studio.com",
+        address: settings.footer_address || "Main Studio Bay, HSR Layout / Indiranagar, Bangalore",
+        timings: settings.footer_timings || "Monday – Saturday: 10:00 AM – 8:30 PM\nSunday: By Prior Appointment Only\nDust-Free Closed Installation Bays\nPrecision Acoustic Calibration Bay",
+        copyright: settings.footer_copyright || "© {year} CARS9 Automotive Studio. All rights reserved.",
+        showWarranty: settings.footer_show_warranty_link !== false,
+        showPricing: settings.footer_show_pricing_link !== false,
+        showAdmin: settings.footer_show_admin_link !== false,
+      });
+      setCustomLogoUrlInput(settings.site_logo_url || "");
+    }
+  }, [settings]);
+
+  const handleSiteLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingSiteLogo(true);
+    try {
+      const url = await uploadFileToTelegram(file);
+      if (url) {
+        await updateSetting("site_logo_url", url);
+        setCustomLogoUrlInput(url);
+        showToastNotice("Site logo successfully uploaded and updated across Header & Footer!", "success");
+      }
+    } catch (err: any) {
+      alert("Failed to upload site logo: " + err.message);
+    } finally {
+      setUploadingSiteLogo(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleSetCustomLogoUrl = async () => {
+    if (!customLogoUrlInput.trim()) {
+      alert("Please enter a valid image URL or use 'Reset to Default Logo'.");
+      return;
+    }
+    await updateSetting("site_logo_url", customLogoUrlInput.trim());
+    showToastNotice("Site logo URL updated across Header & Footer!", "success");
+  };
+
+  const handleResetSiteLogo = async () => {
+    await updateSetting("site_logo_url", "/images/cars9-logo.png");
+    setCustomLogoUrlInput("/images/cars9-logo.png");
+    showToastNotice("Site logo reset to default Cars9 Studio official logo.", "info");
+  };
+
+  const handleSaveFooterInfo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await updateSetting("footer_description", footerForm.description);
+      await updateSetting("footer_guarantee_text", footerForm.guaranteeText);
+      await updateSetting("footer_phone", footerForm.phone);
+      await updateSetting("footer_email", footerForm.email);
+      await updateSetting("footer_address", footerForm.address);
+      await updateSetting("footer_timings", footerForm.timings);
+      await updateSetting("footer_copyright", footerForm.copyright);
+      await updateSetting("footer_show_warranty_link", footerForm.showWarranty);
+      await updateSetting("footer_show_pricing_link", footerForm.showPricing);
+      await updateSetting("footer_show_admin_link", footerForm.showAdmin);
+      
+      setFooterSavedMsg("Footer settings and studio details updated successfully!");
+      showToastNotice("Footer settings saved successfully!", "success");
+      setTimeout(() => setFooterSavedMsg(""), 4000);
+    } catch (err: any) {
+      alert("Failed to save footer settings: " + err.message);
+    }
+  };
+
   const fetchTelegramStatus = async () => {
     try {
       const res = await fetch("/api/telegram/status");
@@ -1830,38 +1936,40 @@ Thank you for choosing Cars9 Studio!`;
             </p>
           </div>
 
-          {/* Login Mode Switcher: Full Admin vs Staff Easy Entry */}
+          {/* Login Mode Switcher: Staff Access First, then Master Admin */}
           <div className={`grid grid-cols-2 p-1 rounded-2xl border text-xs font-bold ${
             isDark ? "bg-slate-800 border-slate-700" : "bg-slate-100 border-slate-200"
           }`}>
             <button
-              onClick={() => {
-                setLoginMode("admin");
-                setAuthError("");
-              }}
-              className={`py-2 px-3 rounded-xl transition flex items-center justify-center gap-1.5 ${
-                loginMode === "admin"
-                  ? "bg-red-600 text-white shadow-md"
-                  : "opacity-60 hover:opacity-100"
-              }`}
-            >
-              <Shield className="w-3.5 h-3.5" />
-              <span>Full Admin</span>
-            </button>
-
-            <button
+              type="button"
               onClick={() => {
                 setLoginMode("staff");
                 setAuthError("");
               }}
-              className={`py-2 px-3 rounded-xl transition flex items-center justify-center gap-1.5 ${
+              className={`py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-1.5 ${
                 loginMode === "staff"
                   ? "bg-emerald-600 text-white shadow-md"
                   : "opacity-60 hover:opacity-100"
               }`}
             >
               <Zap className="w-3.5 h-3.5" />
-              <span>Staff Easy Entry</span>
+              <span>Staff Access</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setLoginMode("admin");
+                setAuthError("");
+              }}
+              className={`py-2.5 px-3 rounded-xl transition flex items-center justify-center gap-1.5 ${
+                loginMode === "admin"
+                  ? "bg-red-600 text-white shadow-md"
+                  : "opacity-60 hover:opacity-100"
+              }`}
+            >
+              <Shield className="w-3.5 h-3.5" />
+              <span>Master Admin</span>
             </button>
           </div>
 
@@ -1871,52 +1979,11 @@ Thank you for choosing Cars9 Studio!`;
             </div>
           )}
 
-          {/* Form 1: Full Admin Login (Username + Password) */}
-          {loginMode === "admin" && (
-            <form onSubmit={handleAdminLogin} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold mb-1 opacity-80">
-                  Admin Username
-                </label>
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="admin"
-                  className={`w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none ${inputClass}`}
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold mb-1 opacity-80">
-                  Admin Security Password
-                </label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className={`w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none ${inputClass}`}
-                  required
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-3 rounded-xl bg-red-600 hover:bg-red-700 font-bold text-xs uppercase tracking-wider text-white shadow-lg shadow-red-600/30 transition active:scale-95 flex items-center justify-center gap-2"
-              >
-                <Lock className="w-4 h-4" />
-                <span>Sign In as Full Admin</span>
-              </button>
-            </form>
-          )}
-
-          {/* Form 2: Staff Easy Entry (Password Only!) */}
+          {/* Form 1: Staff Easy Entry (Default Primary View) */}
           {loginMode === "staff" && (
             <form onSubmit={handleStaffLogin} className="space-y-4 animate-in fade-in">
               <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 text-[11px] text-emerald-600 dark:text-emerald-400 font-mono">
-                ⚡ <strong>Staff Quick Access:</strong> Direct entry into Enquiries & Warranty Manager using employee password only.
+                ⚡ <strong>Studio Staff Access:</strong> Enter employee password to manage customer enquiries, custom quotations, and digital warranty certificates.
               </div>
 
               <div>
@@ -1941,12 +2008,77 @@ Thank you for choosing Cars9 Studio!`;
                 <Zap className="w-4 h-4" />
                 <span>Enter Enquiries & Warranty Portal</span>
               </button>
+
+              <div className="pt-2 text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLoginMode("admin");
+                    setAuthError("");
+                  }}
+                  className="text-xs text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition inline-flex items-center gap-1 font-mono"
+                >
+                  <Shield className="w-3 h-3" />
+                  <span>Master Administrator? Sign In Here →</span>
+                </button>
+              </div>
             </form>
           )}
 
-          <div className="pt-2 text-center text-xs opacity-50 font-mono">
-            Default pass: Admin <code className="text-red-500 font-bold">cars9pass</code> • Staff <code className="text-emerald-500 font-bold">cars9staff</code>
-          </div>
+          {/* Form 2: Full Admin Login (Username + Password) */}
+          {loginMode === "admin" && (
+            <form onSubmit={handleAdminLogin} className="space-y-4 animate-in fade-in">
+              <div>
+                <label className="block text-xs font-semibold mb-1 opacity-80">
+                  Admin Username *
+                </label>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Enter admin username..."
+                  className={`w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none ${inputClass}`}
+                  autoFocus
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold mb-1 opacity-80">
+                  Admin Security Password *
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter admin password..."
+                  className={`w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none ${inputClass}`}
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 rounded-xl bg-red-600 hover:bg-red-700 font-bold text-xs uppercase tracking-wider text-white shadow-lg shadow-red-600/30 transition active:scale-95 flex items-center justify-center gap-2"
+              >
+                <Lock className="w-4 h-4" />
+                <span>Sign In as Master Admin</span>
+              </button>
+
+              <div className="pt-2 text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLoginMode("staff");
+                    setAuthError("");
+                  }}
+                  className="text-xs text-slate-500 dark:text-slate-400 hover:text-emerald-500 dark:hover:text-emerald-400 transition inline-flex items-center gap-1 font-mono"
+                >
+                  <span>← Return to Staff Access</span>
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       </div>
     );
@@ -1963,8 +2095,23 @@ Thank you for choosing Cars9 Studio!`;
         isDark ? "bg-slate-900/95 border-slate-800" : "bg-white/95 border-slate-200"
       }`}>
         {/* TIER 1: Brand & Identity on Left | Quick Action Controls on Right */}
-        <div className="px-3.5 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-2 border-b border-slate-200/60 dark:border-slate-800/60">
+        <div className="px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-2 border-b border-slate-200/60 dark:border-slate-800/60">
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* Mobile Hamburger Menu Button (< md) */}
+            <button
+              type="button"
+              onClick={() => setIsMobileSidebarOpen(true)}
+              className={`md:hidden p-1.5 sm:p-2 rounded-xl border transition ${
+                isDark 
+                  ? "border-slate-800 bg-slate-800/80 text-white hover:bg-slate-700" 
+                  : "border-slate-200 bg-slate-100 text-slate-800 hover:bg-slate-200"
+              }`}
+              title="Open Navigation Menu"
+              aria-label="Open Navigation Menu"
+            >
+              <Menu className="w-4 h-4" />
+            </button>
+
             <Cars9Logo size="sm" href="/" />
             
             {authRole === "staff" ? (
@@ -2049,7 +2196,7 @@ Thank you for choosing Cars9 Studio!`;
           </div>
         </div>
 
-        {/* TIER 2: Dedicated Navigation Tabs (Full Width on Mobile & Desktop) */}
+        {/* TIER 2: Dedicated Navigation Tabs */}
         <div className="px-3 sm:px-6 py-2">
           {/* For STAFF Role: Exactly 2 tabs rendered in a clean, spacious 2-column segmented control */}
           {authRole === "staff" ? (
@@ -2082,85 +2229,57 @@ Thank you for choosing Cars9 Studio!`;
               </button>
             </div>
           ) : (
-            /* For MASTER ADMIN Role: Full 9 Tabs with Mobile Quick Selector + Touch Pill Slider */
-            <div className="flex flex-col gap-2">
-              {/* Mobile Quick Dropdown Selector (< md) for 1-tap direct tab switching */}
-              <div className="md:hidden flex items-center gap-2">
-                <div className="relative flex-1">
-                  <select
-                    value={activeTab}
-                    onChange={(e) => {
-                      const newTab = e.target.value as AdminTab;
-                      setActiveTab(newTab);
-                      if (newTab === "brands" && !selectedBrandForModels && brands.length > 0) {
-                        setSelectedBrandForModels(brands[0]);
-                      }
-                    }}
-                    className={`w-full py-2 pl-3.5 pr-8 rounded-xl border text-xs font-bold appearance-none ${
-                      isDark
-                        ? "bg-slate-800 border-slate-700 text-white"
-                        : "bg-slate-100 border-slate-300 text-slate-900"
-                    }`}
-                  >
-                    <option value="banners">Hero Banners</option>
-                    <option value="inventory">Catalog & Inventory</option>
-                    <option value="brands">Brands & Models Architecture</option>
-                    <option value="enquiries">
-                      Enquiries & Quotations {enquiries.filter((q) => !q.isPriced).length > 0 ? `(${enquiries.filter((q) => !q.isPriced).length} Pending)` : ""}
-                    </option>
-                    <option value="warranties">Warranty Management</option>
-                    <option value="plp_settings">PLP Controls</option>
-                    <option value="pdp_settings">PDP Controls</option>
-                    <option value="security">Security & Passwords</option>
-                    <option value="uploader">Telegram CDN Settings</option>
-                  </select>
-                  <ChevronDown className="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none opacity-60" />
+            /* For MASTER ADMIN Role: Mobile Sidebar Quick Trigger + Desktop 10-Tab Pill Bar */
+            <div>
+              {/* Mobile Quick Bar (< md): Shows Active Section & 1-Tap Menu Trigger */}
+              <div className={`md:hidden flex items-center justify-between p-2 rounded-2xl border text-xs font-bold ${
+                isDark ? "bg-slate-800/90 border-slate-700 text-white" : "bg-slate-100 border-slate-200 text-slate-900"
+              }`}>
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-7 h-7 rounded-xl bg-red-600/15 text-red-500 flex items-center justify-center shrink-0">
+                    {activeTab === "enquiries" && <Inbox className="w-4 h-4" />}
+                    {activeTab === "warranties" && <ShieldCheck className="w-4 h-4" />}
+                    {activeTab === "inventory" && <Package className="w-4 h-4" />}
+                    {activeTab === "brands" && <Car className="w-4 h-4" />}
+                    {activeTab === "banners" && <Sliders className="w-4 h-4" />}
+                    {activeTab === "plp_settings" && <LayoutGrid className="w-4 h-4" />}
+                    {activeTab === "pdp_settings" && <FileCode className="w-4 h-4" />}
+                    {activeTab === "branding_footer" && <ImageIcon className="w-4 h-4" />}
+                    {activeTab === "security" && <KeyRound className="w-4 h-4" />}
+                    {activeTab === "uploader" && <UploadCloud className="w-4 h-4" />}
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-[9px] text-slate-400 font-mono block leading-tight uppercase">Active Section</span>
+                    <span className="text-xs font-extrabold truncate block">
+                      {activeTab === "enquiries" && "Enquiries & Quotations"}
+                      {activeTab === "warranties" && "Warranty Management"}
+                      {activeTab === "inventory" && "Catalog & Inventory"}
+                      {activeTab === "brands" && "Brands & Models"}
+                      {activeTab === "banners" && "Hero Banners"}
+                      {activeTab === "plp_settings" && "PLP Controls"}
+                      {activeTab === "pdp_settings" && "PDP Controls"}
+                      {activeTab === "branding_footer" && "Branding & Footer"}
+                      {activeTab === "security" && "Security & Passwords"}
+                      {activeTab === "uploader" && "Telegram CDN"}
+                    </span>
+                  </div>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsMobileSidebarOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition shadow-md shrink-0 active:scale-95"
+                >
+                  <Menu className="w-3.5 h-3.5" />
+                  <span>Tabs</span>
+                </button>
               </div>
 
-              {/* Edge-to-Edge Touch-Friendly Tabs Slider / Pill Bar */}
-              <div className={`flex items-center gap-1.5 p-1 rounded-2xl border text-xs overflow-x-auto scrollbar-none no-scrollbar ${
+              {/* Desktop Tabs Bar (hidden md:flex): All 10 tabs in strict requested order */}
+              <div className={`hidden md:flex items-center gap-1.5 p-1 rounded-2xl border text-xs overflow-x-auto scrollbar-none no-scrollbar ${
                 isDark ? "bg-slate-800/80 border-slate-700" : "bg-slate-100 border-slate-200"
               }`}>
-                {/* 1. Hero Banners */}
-                <button
-                  onClick={() => setActiveTab("banners")}
-                  className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
-                    activeTab === "banners" ? "bg-red-600 text-white shadow-md" : "opacity-70 hover:opacity-100"
-                  }`}
-                >
-                  <Sliders className="w-3.5 h-3.5" />
-                  <span>Hero Banners</span>
-                </button>
-
-                {/* 2. Catalog & Inventory */}
-                <button
-                  onClick={() => setActiveTab("inventory")}
-                  className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
-                    activeTab === "inventory" ? "bg-red-600 text-white shadow-md" : "opacity-70 hover:opacity-100"
-                  }`}
-                >
-                  <Package className="w-3.5 h-3.5" />
-                  <span>Catalog & Inventory</span>
-                </button>
-
-                {/* 3. Brands & Models */}
-                <button
-                  onClick={() => {
-                    setActiveTab("brands");
-                    if (!selectedBrandForModels && brands.length > 0) {
-                      setSelectedBrandForModels(brands[0]);
-                    }
-                  }}
-                  className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
-                    activeTab === "brands" ? "bg-red-600 text-white shadow-md" : "opacity-70 hover:opacity-100"
-                  }`}
-                >
-                  <Car className="w-3.5 h-3.5" />
-                  <span>Brands & Models</span>
-                </button>
-
-                {/* 4. Enquiries */}
+                {/* 1. Enquiries - FIRST PAGE */}
                 <button
                   onClick={() => setActiveTab("enquiries")}
                   className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 whitespace-nowrap relative ${
@@ -2176,7 +2295,7 @@ Thank you for choosing Cars9 Studio!`;
                   )}
                 </button>
 
-                {/* 5. Warranty Manager */}
+                {/* 2. Warranty Manager - SECOND PAGE */}
                 <button
                   onClick={() => setActiveTab("warranties")}
                   className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
@@ -2185,6 +2304,44 @@ Thank you for choosing Cars9 Studio!`;
                 >
                   <ShieldCheck className="w-3.5 h-3.5" />
                   <span>Warranty Manager</span>
+                </button>
+
+                {/* 3. Catalog & Inventory */}
+                <button
+                  onClick={() => setActiveTab("inventory")}
+                  className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
+                    activeTab === "inventory" ? "bg-red-600 text-white shadow-md" : "opacity-70 hover:opacity-100"
+                  }`}
+                >
+                  <Package className="w-3.5 h-3.5" />
+                  <span>Catalog & Inventory</span>
+                </button>
+
+                {/* 4. Brands & Models */}
+                <button
+                  onClick={() => {
+                    setActiveTab("brands");
+                    if (!selectedBrandForModels && brands.length > 0) {
+                      setSelectedBrandForModels(brands[0]);
+                    }
+                  }}
+                  className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
+                    activeTab === "brands" ? "bg-red-600 text-white shadow-md" : "opacity-70 hover:opacity-100"
+                  }`}
+                >
+                  <Car className="w-3.5 h-3.5" />
+                  <span>Brands & Models</span>
+                </button>
+
+                {/* 5. Hero Banners */}
+                <button
+                  onClick={() => setActiveTab("banners")}
+                  className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
+                    activeTab === "banners" ? "bg-red-600 text-white shadow-md" : "opacity-70 hover:opacity-100"
+                  }`}
+                >
+                  <Sliders className="w-3.5 h-3.5" />
+                  <span>Hero Banners</span>
                 </button>
 
                 {/* 6. PLP Controls */}
@@ -2209,7 +2366,18 @@ Thank you for choosing Cars9 Studio!`;
                   <span>PDP Controls</span>
                 </button>
 
-                {/* 8. Passwords */}
+                {/* 8. Branding & Footer */}
+                <button
+                  onClick={() => setActiveTab("branding_footer")}
+                  className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
+                    activeTab === "branding_footer" ? "bg-red-600 text-white shadow-md" : "opacity-70 hover:opacity-100"
+                  }`}
+                >
+                  <ImageIcon className="w-3.5 h-3.5" />
+                  <span>Branding & Footer</span>
+                </button>
+
+                {/* 9. Security & Passwords */}
                 <button
                   onClick={() => setActiveTab("security")}
                   className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
@@ -2220,7 +2388,7 @@ Thank you for choosing Cars9 Studio!`;
                   <span>Passwords</span>
                 </button>
 
-                {/* 9. Telegram CDN */}
+                {/* 10. Telegram CDN */}
                 <button
                   onClick={() => setActiveTab("uploader")}
                   className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 whitespace-nowrap ${
@@ -2238,6 +2406,274 @@ Thank you for choosing Cars9 Studio!`;
           )}
         </div>
       </header>
+
+      {/* ===================================================================== */}
+      {/* MOBILE LEFT SIDEBAR DRAWER (< md)                                     */}
+      {/* ===================================================================== */}
+      {isMobileSidebarOpen && (
+        <div className="fixed inset-0 z-50 md:hidden animate-in fade-in duration-200">
+          {/* Backdrop overlay */}
+          <div 
+            className="fixed inset-0 bg-black/75 backdrop-blur-sm"
+            onClick={() => setIsMobileSidebarOpen(false)}
+          />
+
+          {/* Drawer content sliding from left */}
+          <div className={`fixed inset-y-0 left-0 w-72 sm:w-80 max-w-[85vw] ${cardClass} border-r shadow-2xl flex flex-col justify-between z-50 animate-in slide-in-from-left duration-200`}>
+            
+            {/* Drawer Header */}
+            <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Cars9Logo size="sm" href="/" />
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider ${
+                  authRole === "staff" 
+                    ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/30" 
+                    : "bg-red-600/10 text-red-500 border border-red-500/30"
+                }`}>
+                  {authRole === "staff" ? "Staff Access" : "Master Admin"}
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsMobileSidebarOpen(false)}
+                className="p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition"
+                aria-label="Close Sidebar"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Drawer Body: All Tabs Navigation */}
+            <div className="flex-1 overflow-y-auto p-3 space-y-4">
+              
+              {/* Operations Section */}
+              <div>
+                <span className="px-2 text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                  Studio Operations
+                </span>
+                <div className="space-y-1">
+                  {/* 1. Enquiries - ALWAYS FIRST */}
+                  <button
+                    onClick={() => {
+                      setActiveTab("enquiries");
+                      setIsMobileSidebarOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition ${
+                      activeTab === "enquiries"
+                        ? "bg-red-600 text-white shadow-md"
+                        : "hover:bg-slate-100 dark:hover:bg-slate-800/80 opacity-80 hover:opacity-100"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Inbox className="w-4 h-4" />
+                      <span>Enquiries & Quotations</span>
+                    </div>
+                    {enquiries.filter((q) => !q.isPriced).length > 0 && (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] bg-amber-400 text-slate-950 font-black animate-pulse">
+                        {enquiries.filter((q) => !q.isPriced).length}
+                      </span>
+                    )}
+                  </button>
+
+                  {/* 2. Warranties - ALWAYS SECOND */}
+                  <button
+                    onClick={() => {
+                      setActiveTab("warranties");
+                      setIsMobileSidebarOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition ${
+                      activeTab === "warranties"
+                        ? "bg-red-600 text-white shadow-md"
+                        : "hover:bg-slate-100 dark:hover:bg-slate-800/80 opacity-80 hover:opacity-100"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <ShieldCheck className="w-4 h-4" />
+                      <span>Warranty Management</span>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Master Admin Sections */}
+              {authRole === "admin" && (
+                <>
+                  {/* Catalog Management */}
+                  <div>
+                    <span className="px-2 text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                      Catalog Management
+                    </span>
+                    <div className="space-y-1">
+                      {/* 3. Catalog & Inventory */}
+                      <button
+                        onClick={() => {
+                          setActiveTab("inventory");
+                          setIsMobileSidebarOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition ${
+                          activeTab === "inventory"
+                            ? "bg-red-600 text-white shadow-md"
+                            : "hover:bg-slate-100 dark:hover:bg-slate-800/80 opacity-80 hover:opacity-100"
+                        }`}
+                      >
+                        <Package className="w-4 h-4" />
+                        <span>Catalog & Inventory</span>
+                      </button>
+
+                      {/* 4. Brands & Models */}
+                      <button
+                        onClick={() => {
+                          setActiveTab("brands");
+                          if (!selectedBrandForModels && brands.length > 0) {
+                            setSelectedBrandForModels(brands[0]);
+                          }
+                          setIsMobileSidebarOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition ${
+                          activeTab === "brands"
+                            ? "bg-red-600 text-white shadow-md"
+                            : "hover:bg-slate-100 dark:hover:bg-slate-800/80 opacity-80 hover:opacity-100"
+                        }`}
+                      >
+                        <Car className="w-4 h-4" />
+                        <span>Brands & Models</span>
+                      </button>
+
+                      {/* 5. Hero Banners */}
+                      <button
+                        onClick={() => {
+                          setActiveTab("banners");
+                          setIsMobileSidebarOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition ${
+                          activeTab === "banners"
+                            ? "bg-red-600 text-white shadow-md"
+                            : "hover:bg-slate-100 dark:hover:bg-slate-800/80 opacity-80 hover:opacity-100"
+                        }`}
+                      >
+                        <Sliders className="w-4 h-4" />
+                        <span>Hero Banners</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Storefront & Branding Controls */}
+                  <div>
+                    <span className="px-2 text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                      Storefront & Controls
+                    </span>
+                    <div className="space-y-1">
+                      {/* 6. PLP Controls */}
+                      <button
+                        onClick={() => {
+                          setActiveTab("plp_settings");
+                          setIsMobileSidebarOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition ${
+                          activeTab === "plp_settings"
+                            ? "bg-red-600 text-white shadow-md"
+                            : "hover:bg-slate-100 dark:hover:bg-slate-800/80 opacity-80 hover:opacity-100"
+                        }`}
+                      >
+                        <LayoutGrid className="w-4 h-4" />
+                        <span>PLP Controls</span>
+                      </button>
+
+                      {/* 7. PDP Controls */}
+                      <button
+                        onClick={() => {
+                          setActiveTab("pdp_settings");
+                          setIsMobileSidebarOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition ${
+                          activeTab === "pdp_settings"
+                            ? "bg-red-600 text-white shadow-md"
+                            : "hover:bg-slate-100 dark:hover:bg-slate-800/80 opacity-80 hover:opacity-100"
+                        }`}
+                      >
+                        <FileCode className="w-4 h-4" />
+                        <span>PDP Controls</span>
+                      </button>
+
+                      {/* 8. Branding & Footer */}
+                      <button
+                        onClick={() => {
+                          setActiveTab("branding_footer");
+                          setIsMobileSidebarOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition ${
+                          activeTab === "branding_footer"
+                            ? "bg-red-600 text-white shadow-md"
+                            : "hover:bg-slate-100 dark:hover:bg-slate-800/80 opacity-80 hover:opacity-100"
+                        }`}
+                      >
+                        <ImageIcon className="w-4 h-4" />
+                        <span>Branding & Footer</span>
+                      </button>
+
+                      {/* 9. Security */}
+                      <button
+                        onClick={() => {
+                          setActiveTab("security");
+                          setIsMobileSidebarOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition ${
+                          activeTab === "security"
+                            ? "bg-red-600 text-white shadow-md"
+                            : "hover:bg-slate-100 dark:hover:bg-slate-800/80 opacity-80 hover:opacity-100"
+                        }`}
+                      >
+                        <KeyRound className="w-4 h-4" />
+                        <span>Security & Passwords</span>
+                      </button>
+
+                      {/* 10. Telegram CDN */}
+                      <button
+                        onClick={() => {
+                          setActiveTab("uploader");
+                          setIsMobileSidebarOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition ${
+                          activeTab === "uploader"
+                            ? "bg-red-600 text-white shadow-md"
+                            : "hover:bg-slate-100 dark:hover:bg-slate-800/80 opacity-80 hover:opacity-100"
+                        }`}
+                      >
+                        <UploadCloud className="w-4 h-4" />
+                        <span>Telegram CDN</span>
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+
+            </div>
+
+            {/* Drawer Footer Actions */}
+            <div className="p-3 border-t border-slate-200 dark:border-slate-800 space-y-2">
+              <Link
+                href="/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200 transition"
+              >
+                <ExternalLink className="w-3.5 h-3.5 text-red-500" />
+                <span>View Storefront</span>
+              </Link>
+
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-red-500/20 text-red-500 hover:bg-red-500/10 text-xs font-bold transition"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>{authRole === "staff" ? "Exit Staff Portal" : "Sign Out"}</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
@@ -5137,7 +5573,310 @@ Thank you for choosing Cars9 Studio!`;
         )}
 
         {/* ================================================================= */}
-        {/* TAB 7: SECURITY & PASSWORDS CONTROL (Admin Only)                  */}
+        {/* TAB 8: BRANDING & FOOTER CONTROLS (Admin Only)                    */}
+        {/* ================================================================= */}
+        {activeTab === "branding_footer" && authRole === "admin" && (
+          <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-200">
+            <div>
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                <ImageIcon className="w-5 h-5 text-red-500" />
+                <span>Site Branding & Footer Information Control</span>
+              </h2>
+              <p className="text-xs opacity-60 mt-0.5">
+                Update the official site logo across header and footer, and customize all company details in the storefront footer.
+              </p>
+            </div>
+
+            {/* 1. Official Site Logo Management */}
+            <div className={`${cardClass} border rounded-3xl p-6 sm:p-8 space-y-6`}>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200 dark:border-slate-800">
+                <div>
+                  <h3 className="text-base font-extrabold flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-amber-500" />
+                    <span>Site Logo (Header & Footer Dynamic Brand Mark)</span>
+                  </h3>
+                  <p className="text-xs opacity-60 mt-0.5">
+                    Upload a high-resolution logo image or configure an external URL. Active immediately across all pages.
+                  </p>
+                </div>
+
+                <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 self-start sm:self-auto">
+                  {settings.site_logo_url && settings.site_logo_url !== "/images/cars9-logo.png" ? "Custom Logo Active" : "Default Logo Active"}
+                </span>
+              </div>
+
+              {/* Live Preview Boxes: Light & Dark Modes */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 rounded-2xl bg-white border border-slate-200 text-center space-y-2 shadow-xs">
+                  <span className="text-[10px] font-mono font-bold uppercase text-slate-500 block">
+                    Header Light Preview
+                  </span>
+                  <div className="h-16 flex items-center justify-center">
+                    <Cars9Logo size="md" href="/" />
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-2 shadow-xs">
+                  <span className="text-[10px] font-mono font-bold uppercase text-slate-400 block">
+                    Header Dark Preview
+                  </span>
+                  <div className="h-16 flex items-center justify-center">
+                    <Cars9Logo size="md" href="/" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Upload & Edit Controls */}
+              <div className="space-y-4 pt-2">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider font-mono mb-2">
+                    Upload New Logo Image (File)
+                  </label>
+                  <input
+                    type="file"
+                    ref={logoFileInputRef}
+                    onChange={handleSiteLogoUpload}
+                    accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                    className="hidden"
+                  />
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      disabled={uploadingSiteLogo}
+                      onClick={() => logoFileInputRef.current?.click()}
+                      className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition shadow-md flex items-center gap-2 active:scale-95 disabled:opacity-50"
+                    >
+                      <Upload className={`w-4 h-4 ${uploadingSiteLogo ? "animate-spin" : ""}`} />
+                      <span>{uploadingSiteLogo ? "Uploading via Telegram CDN..." : "Upload Logo Image..."}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleResetSiteLogo}
+                      className="px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold transition flex items-center gap-1.5"
+                      title="Reset back to official Cars9 studio logo"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Reset to Default Logo</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Direct Image URL input */}
+                <div className="space-y-1.5 pt-2">
+                  <label className="block text-xs font-bold uppercase tracking-wider font-mono opacity-80">
+                    Or Direct Image / CDN URL
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="e.g. /images/cars9-logo.png or https://..."
+                      value={customLogoUrlInput}
+                      onChange={(e) => setCustomLogoUrlInput(e.target.value)}
+                      className={`flex-1 px-4 py-2 rounded-xl border text-xs font-mono ${inputClass}`}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSetCustomLogoUrl}
+                      className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition"
+                    >
+                      Apply URL
+                    </button>
+                  </div>
+                </div>
+
+                {/* Permanent Guarantee Notice */}
+                <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 text-xs flex items-center gap-2 font-mono">
+                  <ShieldCheck className="w-4 h-4 shrink-0" />
+                  <span>
+                    <strong>Permanent Visibility Guarantee:</strong> The logo cannot be deleted. If a custom upload is removed or fails, it automatically falls back to the official Cars9 logo so header and footer are always branded.
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* 2. Footer Studio Information Controls */}
+            <div className={`${cardClass} border rounded-3xl p-6 sm:p-8 space-y-6`}>
+              <div className="pb-4 border-b border-slate-200 dark:border-slate-800">
+                <h3 className="text-base font-extrabold flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-emerald-500" />
+                  <span>Storefront Footer Details</span>
+                </h3>
+                <p className="text-xs opacity-60 mt-0.5">
+                  Complete control over company description, guarantee badges, studio timings, contact numbers, and physical address.
+                </p>
+              </div>
+
+              {footerSavedMsg && (
+                <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 text-xs font-mono flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  <span>{footerSavedMsg}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleSaveFooterInfo} className="space-y-5">
+                {/* Description */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider font-mono opacity-80">
+                    Studio Brand Description
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={footerForm.description}
+                    onChange={(e) => setFooterForm({ ...footerForm, description: e.target.value })}
+                    placeholder="Enter studio description..."
+                    className={`w-full px-4 py-2.5 rounded-xl border text-xs leading-relaxed ${inputClass}`}
+                    required
+                  />
+                  <span className="text-[10px] opacity-60 font-mono">Displayed in Column 1 below the Cars9 logo.</span>
+                </div>
+
+                {/* Guarantee Text */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider font-mono opacity-80">
+                    Quality Guarantee Badge Text
+                  </label>
+                  <input
+                    type="text"
+                    value={footerForm.guaranteeText}
+                    onChange={(e) => setFooterForm({ ...footerForm, guaranteeText: e.target.value })}
+                    placeholder="e.g. 100% Zero Wire Slicing Guarantee"
+                    className={`w-full px-4 py-2.5 rounded-xl border text-xs ${inputClass}`}
+                    required
+                  />
+                </div>
+
+                {/* Contact Phone & Email */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider font-mono opacity-80">
+                      Studio Phone / WhatsApp
+                    </label>
+                    <input
+                      type="text"
+                      value={footerForm.phone}
+                      onChange={(e) => setFooterForm({ ...footerForm, phone: e.target.value })}
+                      placeholder="+91 90000 00000 / +91 98888 88888"
+                      className={`w-full px-4 py-2.5 rounded-xl border text-xs ${inputClass}`}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider font-mono opacity-80">
+                      Concierge Support Email
+                    </label>
+                    <input
+                      type="email"
+                      value={footerForm.email}
+                      onChange={(e) => setFooterForm({ ...footerForm, email: e.target.value })}
+                      placeholder="concierge@cars9studio.com"
+                      className={`w-full px-4 py-2.5 rounded-xl border text-xs ${inputClass}`}
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Physical Bay Location */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider font-mono opacity-80">
+                    Studio Bay Physical Address
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={footerForm.address}
+                    onChange={(e) => setFooterForm({ ...footerForm, address: e.target.value })}
+                    placeholder="Enter physical studio location..."
+                    className={`w-full px-4 py-2.5 rounded-xl border text-xs ${inputClass}`}
+                    required
+                  />
+                </div>
+
+                {/* Working Hours & Timings */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider font-mono opacity-80">
+                    Studio Operations & Working Hours (One line per bullet)
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={footerForm.timings}
+                    onChange={(e) => setFooterForm({ ...footerForm, timings: e.target.value })}
+                    placeholder="Monday – Saturday: 10:00 AM – 8:30 PM&#10;Sunday: By Prior Appointment Only&#10;..."
+                    className={`w-full px-4 py-2.5 rounded-xl border text-xs font-mono leading-relaxed ${inputClass}`}
+                    required
+                  />
+                  <span className="text-[10px] opacity-60 font-mono">Each new line renders as a bullet item in the &ldquo;Studio Operations&rdquo; column.</span>
+                </div>
+
+                {/* Copyright Line */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider font-mono opacity-80">
+                    Copyright Notice
+                  </label>
+                  <input
+                    type="text"
+                    value={footerForm.copyright}
+                    onChange={(e) => setFooterForm({ ...footerForm, copyright: e.target.value })}
+                    placeholder="© {year} CARS9 Automotive Studio. All rights reserved."
+                    className={`w-full px-4 py-2.5 rounded-xl border text-xs ${inputClass}`}
+                    required
+                  />
+                  <span className="text-[10px] opacity-60 font-mono">Use &ldquo;{'{year}'}&rdquo; to dynamically insert the current year.</span>
+                </div>
+
+                {/* Footer Quick Links Visibility */}
+                <div className="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-3">
+                  <label className="block text-xs font-bold uppercase tracking-wider font-mono opacity-80">
+                    Footer Quick Links Visibility
+                  </label>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <label className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer ${innerCardClass}`}>
+                      <span className="text-xs font-bold">Digital Warranty</span>
+                      <input
+                        type="checkbox"
+                        checked={footerForm.showWarranty}
+                        onChange={(e) => setFooterForm({ ...footerForm, showWarranty: e.target.checked })}
+                        className="w-4 h-4 accent-red-600 rounded"
+                      />
+                    </label>
+
+                    <label className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer ${innerCardClass}`}>
+                      <span className="text-xs font-bold">Owner Pricing Tool</span>
+                      <input
+                        type="checkbox"
+                        checked={footerForm.showPricing}
+                        onChange={(e) => setFooterForm({ ...footerForm, showPricing: e.target.checked })}
+                        className="w-4 h-4 accent-red-600 rounded"
+                      />
+                    </label>
+
+                    <label className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer ${innerCardClass}`}>
+                      <span className="text-xs font-bold">Admin Portal Link</span>
+                      <input
+                        type="checkbox"
+                        checked={footerForm.showAdmin}
+                        onChange={(e) => setFooterForm({ ...footerForm, showAdmin: e.target.checked })}
+                        className="w-4 h-4 accent-red-600 rounded"
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-3.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase tracking-wider transition shadow-lg shadow-red-600/25 active:scale-95 flex items-center justify-center gap-2"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>Save Footer & Studio Settings</span>
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* ================================================================= */}
+        {/* TAB 9: SECURITY & PASSWORDS CONTROL (Admin Only)                  */}
         {/* ================================================================= */}
         {activeTab === "security" && authRole === "admin" && (
           <div className="max-w-2xl mx-auto space-y-6">

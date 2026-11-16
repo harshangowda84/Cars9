@@ -7,6 +7,7 @@ import { CarPart } from "@/data/mockData";
 import { useCart } from "@/context/CartContext";
 import { useSettings } from "@/context/SettingsContext";
 import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 import TechnicalDrawing from "@/components/TechnicalDrawing";
 import { getDisplayImageUrl } from "@/lib/imageUrl";
 import { 
@@ -550,19 +551,8 @@ Please share custom quotation, studio bay availability & installation schedule.`
 
       </main>
 
-      {/* Footer */}
-      <footer className="mt-20 border-t border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-[#0a0e18]/80 backdrop-blur-xl py-10 text-xs text-slate-400 font-mono">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div>© {new Date().getFullYear()} CARS9 Automotive Studio • Coupler-to-Coupler Fitment</div>
-          <div className="flex items-center gap-4">
-            <Link href="/" className="hover:text-red-500 transition">Catalog</Link>
-            <span>•</span>
-            <Link href="/warranty" className="hover:text-emerald-500 transition">Warranty</Link>
-            <span>•</span>
-            <Link href="/quotation" className="hover:text-amber-500 transition">Quotation</Link>
-          </div>
-        </div>
-      </footer>
+      {/* Dynamic Studio Footer */}
+      <Footer />
 
     </div>
   );
