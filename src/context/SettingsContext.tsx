@@ -35,6 +35,7 @@ export interface SiteSettings {
   whatsapp_footer_phone?: string;
   whatsapp_pdp_phone?: string;
   whatsapp_quotation_phone?: string;
+  whatsapp_dispatch_phone?: string;
 
   // Car Brands Custom Homepage Display Order
   brand_order?: string[];
@@ -107,6 +108,7 @@ const defaultSettings: SiteSettings = {
   whatsapp_footer_phone: "",
   whatsapp_pdp_phone: "",
   whatsapp_quotation_phone: "",
+  whatsapp_dispatch_phone: "",
 
   brand_order: [],
 

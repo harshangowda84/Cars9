@@ -86,11 +86,15 @@ interface QuotationRecord {
     category?: string;
     unitPrice?: number;
     laborCharge?: number;
+    installationCharge?: number;
     total?: number;
   }>;
   subtotal?: number;
   laborTotal?: number;
+  installationTotal?: number;
   discountAmount?: number;
+  isGstEnabled?: boolean;
+  customGstRate?: number;
   taxAmount?: number;
   grandTotal?: number;
   isPriced?: boolean;
@@ -263,6 +267,9 @@ export default function AdminPortalPage() {
   const [selectedEnquiry, setSelectedEnquiry] = useState<QuotationRecord | null>(null);
   const [pricingItems, setPricingItems] = useState<any[]>([]);
   const [quoteDiscount, setQuoteDiscount] = useState<number>(0);
+  const [isGstEnabled, setIsGstEnabled] = useState<boolean>(true);
+  const [customGstRate, setCustomGstRate] = useState<number>(18);
+  const [showPrintQuoteModal, setShowPrintQuoteModal] = useState<boolean>(false);
   const [savingQuote, setSavingQuote] = useState(false);
   const [quoteSavedSuccess, setQuoteSavedSuccess] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -328,6 +335,7 @@ export default function AdminPortalPage() {
   const [whatsappFooterInput, setWhatsappFooterInput] = useState("");
   const [whatsappPdpInput, setWhatsappPdpInput] = useState("");
   const [whatsappQuotationInput, setWhatsappQuotationInput] = useState("");
+  const [whatsappDispatchInput, setWhatsappDispatchInput] = useState("");
   const [whatsappSavedMsg, setWhatsappSavedMsg] = useState("");
   const [whatsappAppliedMsg, setWhatsappAppliedMsg] = useState("");
   const [savingWhatsApp, setSavingWhatsApp] = useState(false);
@@ -1635,21 +1643,24 @@ export default function AdminPortalPage() {
     setSelectedEnquiry(enquiry);
     setQuoteSavedSuccess(false);
 
-    const initItems = (enquiry.items || []).map((item) => {
+    const initItems = (enquiry.items || []).map((item: any) => {
       const catalogRef = products.find((p) => p.id === item.id || p.sku === item.sku);
       const defaultUnitPrice = item.unitPrice ?? catalogRef?.price ?? 15000;
-      const defaultLabor = item.laborCharge ?? 1500;
+      const defaultInstallation = item.installationCharge ?? item.laborCharge ?? 1500;
 
       return {
         ...item,
         unitPrice: defaultUnitPrice,
-        laborCharge: defaultLabor,
+        installationCharge: defaultInstallation,
+        laborCharge: defaultInstallation,
         quantity: item.quantity || 1,
       };
     });
 
     setPricingItems(initItems);
     setQuoteDiscount(enquiry.discountAmount || 0);
+    setIsGstEnabled(enquiry.isGstEnabled !== undefined ? Boolean(enquiry.isGstEnabled) : true);
+    setCustomGstRate(enquiry.customGstRate !== undefined ? Number(enquiry.customGstRate) : 18);
 
     if (typeof window !== "undefined" && window.innerWidth < 1024) {
       setTimeout(() => {
@@ -1663,12 +1674,14 @@ export default function AdminPortalPage() {
     return pricingItems.reduce((sum, item) => sum + (Number(item.unitPrice) || 0) * (Number(item.quantity) || 1), 0);
   }, [pricingItems]);
 
-  const quoteLaborTotal = useMemo(() => {
-    return pricingItems.reduce((sum, item) => sum + (Number(item.laborCharge) || 0), 0);
+  const quoteInstallationTotal = useMemo(() => {
+    return pricingItems.reduce((sum, item) => sum + (Number(item.installationCharge ?? item.laborCharge) || 0), 0);
   }, [pricingItems]);
 
-  const quoteTaxable = Math.max(0, quoteSubtotal + quoteLaborTotal - (Number(quoteDiscount) || 0));
-  const quoteGst = Math.round(quoteTaxable * 0.18);
+  const quoteLaborTotal = quoteInstallationTotal;
+
+  const quoteTaxable = Math.max(0, quoteSubtotal + quoteInstallationTotal - (Number(quoteDiscount) || 0));
+  const quoteGst = isGstEnabled ? Math.round(quoteTaxable * (Math.max(0, Number(customGstRate) || 0) / 100)) : 0;
   const quoteGrandTotal = quoteTaxable + quoteGst;
 
   const handleSaveAndFinalizeQuotation = async () => {
@@ -1679,11 +1692,16 @@ export default function AdminPortalPage() {
       const payload = {
         items: pricingItems.map((item) => ({
           ...item,
-          total: (Number(item.unitPrice) || 0) * (Number(item.quantity) || 1) + (Number(item.laborCharge) || 0),
+          laborCharge: Number(item.installationCharge ?? item.laborCharge) || 0,
+          installationCharge: Number(item.installationCharge ?? item.laborCharge) || 0,
+          total: (Number(item.unitPrice) || 0) * (Number(item.quantity) || 1) + (Number(item.installationCharge ?? item.laborCharge) || 0),
         })),
         subtotal: quoteSubtotal,
-        laborTotal: quoteLaborTotal,
+        laborTotal: quoteInstallationTotal,
+        installationTotal: quoteInstallationTotal,
         discountAmount: Number(quoteDiscount) || 0,
+        isGstEnabled,
+        customGstRate: Number(customGstRate) || 0,
         taxAmount: quoteGst,
         grandTotal: quoteGrandTotal,
         isPriced: true,
@@ -1720,9 +1738,13 @@ export default function AdminPortalPage() {
     const itemsSummary = pricingItems
       .map(
         (it, idx) =>
-          `${idx + 1}. *${it.name}* (Qty: ${it.quantity}) - ₹${((Number(it.unitPrice) || 0) * (it.quantity || 1)).toLocaleString("en-IN")} + Labor: ₹${Number(it.laborCharge || 0).toLocaleString("en-IN")}`
+          `${idx + 1}. *${it.name}* (Qty: ${it.quantity}) - ₹${((Number(it.unitPrice) || 0) * (it.quantity || 1)).toLocaleString("en-IN")} + Installation: ₹${Number(it.installationCharge ?? it.laborCharge ?? 0).toLocaleString("en-IN")}`
       )
       .join("\n");
+
+    const gstLine = isGstEnabled
+      ? `GST (${customGstRate}%): ₹${quoteGst.toLocaleString("en-IN")}`
+      : `GST: Exempted / 0%`;
 
     const message = `*CARS9 BESPOKE AUTOMOTIVE STUDIO - ESTIMATE*
 ---------------------------------------
@@ -1730,14 +1752,14 @@ export default function AdminPortalPage() {
 *Customer:* ${selectedEnquiry.customerName}
 *Vehicle:* ${selectedEnquiry.vehicleBrand} ${selectedEnquiry.vehicleModel} ${selectedEnquiry.vehicleYear || ""}
 
-*Approved Components & Fitting:*
+*Approved Components & Installation:*
 ${itemsSummary}
 
 *FINANCIAL SUMMARY:*
 Subtotal: ₹${quoteSubtotal.toLocaleString("en-IN")}
-Studio Labor: ₹${quoteLaborTotal.toLocaleString("en-IN")}
+Installation Charges: ₹${quoteInstallationTotal.toLocaleString("en-IN")}
 Discount: -₹${Number(quoteDiscount).toLocaleString("en-IN")}
-GST (18%): ₹${quoteGst.toLocaleString("en-IN")}
+${gstLine}
 *GRAND TOTAL: ₹${quoteGrandTotal.toLocaleString("en-IN")}*
 
 *View Official Studio Quotation & Book Bay:*
@@ -1745,7 +1767,12 @@ ${quoteUrl}
 ---------------------------------------
 Thank you for choosing Cars9 Studio!`;
 
-    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
+    const dispatchPhone = (settings.whatsapp_dispatch_phone || selectedEnquiry.customerPhone || settings.whatsapp_master_phone || "").replace(/\D/g, "");
+    if (dispatchPhone) {
+      window.open(`https://wa.me/${dispatchPhone}?text=${encodeURIComponent(message)}`, "_blank");
+    } else {
+      window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
+    }
   };
 
   const handleCopyQuoteLink = () => {
@@ -1853,6 +1880,7 @@ Thank you for choosing Cars9 Studio!`;
       setWhatsappFooterInput(settings.whatsapp_footer_phone || "");
       setWhatsappPdpInput(settings.whatsapp_pdp_phone || "");
       setWhatsappQuotationInput(settings.whatsapp_quotation_phone || "");
+      setWhatsappDispatchInput(settings.whatsapp_dispatch_phone || "");
       setDefaultBannerForm({
         title1: settings.default_banner_title1 || "ELEVATE YOUR CAR WITH",
         title2: settings.default_banner_title2 || "CUSTOM ACCESSORIES",
@@ -2006,7 +2034,8 @@ Thank you for choosing Cars9 Studio!`;
     setWhatsappFooterInput(val);
     setWhatsappPdpInput(val);
     setWhatsappQuotationInput(val);
-    setWhatsappAppliedMsg("✓ Master number applied to all 4 touchpoints! Click Save to apply.");
+    setWhatsappDispatchInput(val);
+    setWhatsappAppliedMsg("✓ Master number applied to all 5 touchpoints! Click Save to apply.");
     setTimeout(() => setWhatsappAppliedMsg(""), 4000);
   };
 
@@ -2018,6 +2047,7 @@ Thank you for choosing Cars9 Studio!`;
       await updateSetting("whatsapp_footer_phone", whatsappFooterInput.trim());
       await updateSetting("whatsapp_pdp_phone", whatsappPdpInput.trim());
       await updateSetting("whatsapp_quotation_phone", whatsappQuotationInput.trim());
+      await updateSetting("whatsapp_dispatch_phone", whatsappDispatchInput.trim());
 
       // If footer WhatsApp number or master number was provided, also sync footer_social_whatsapp
       const effectiveFooter = whatsappFooterInput.trim() || whatsappMasterInput.trim();
@@ -3562,16 +3592,6 @@ Thank you for choosing Cars9 Studio!`;
                         </option>
                       ))}
                     </select>
-
-                    <label className="flex items-center gap-1.5 opacity-80 cursor-pointer text-xs font-medium">
-                      <input
-                        type="checkbox"
-                        checked={inStockOnly}
-                        onChange={(e) => setInStockOnly(e.target.checked)}
-                        className="rounded border-slate-400 text-red-600"
-                      />
-                      <span>In-Stock Only</span>
-                    </label>
                   </div>
                 </div>
 
@@ -3586,7 +3606,6 @@ Thank you for choosing Cars9 Studio!`;
                         <th className="py-2.5 px-3">Make / Model</th>
                         <th className="py-2.5 px-3">Compatible Years</th>
                         <th className="py-2.5 px-3">SKU</th>
-                        <th className="py-2.5 px-3 text-center">Stock</th>
                         <th className="py-2.5 px-3 text-right">Catalog Price</th>
                         <th className="py-2.5 px-3 text-center">Actions</th>
                       </tr>
@@ -3659,26 +3678,6 @@ Thank you for choosing Cars9 Studio!`;
                             )}
                           </td>
                           <td className="py-3 px-3 font-mono opacity-70">{item.sku}</td>
-                          
-                          <td className="py-3 px-3 text-center">
-                            <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border font-mono text-xs ${innerCardClass}`}>
-                              <button
-                                onClick={() => handleAdjustStock(item.id, -1)}
-                                className="opacity-50 hover:opacity-100"
-                              >
-                                -
-                              </button>
-                              <span className={`font-bold ${item.stock <= 3 ? "text-amber-500" : ""}`}>
-                                {item.stock}
-                              </span>
-                              <button
-                                onClick={() => handleAdjustStock(item.id, 1)}
-                                className="opacity-50 hover:opacity-100"
-                              >
-                                +
-                              </button>
-                            </div>
-                          </td>
 
                           <td className="py-3 px-3 text-right font-mono font-bold">
                             ₹{item.price?.toLocaleString("en-IN")}
@@ -4569,7 +4568,7 @@ Thank you for choosing Cars9 Studio!`;
                     {/* Component Pricing Form */}
                     <div className="space-y-3">
                       <span className="text-[10px] font-mono font-bold uppercase tracking-wider opacity-60 block">
-                        Set Component Prices & Studio Labor
+                        Set Component Prices & Installation Charges
                       </span>
 
                       <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
@@ -4602,15 +4601,15 @@ Thank you for choosing Cars9 Studio!`;
 
                               <div>
                                 <label className="block text-[10px] font-mono opacity-60 mb-1">
-                                  Studio Labor / Fitment (₹)
+                                  Installation Charges (₹)
                                 </label>
                                 <input
                                   type="number"
-                                  value={item.laborCharge}
+                                  value={item.installationCharge ?? item.laborCharge ?? 0}
                                   onChange={(e) => {
                                     const val = Number(e.target.value);
                                     setPricingItems((prev) =>
-                                      prev.map((it, i) => (i === idx ? { ...it, laborCharge: val } : it))
+                                      prev.map((it, i) => (i === idx ? { ...it, installationCharge: val, laborCharge: val } : it))
                                     );
                                   }}
                                   className={`w-full px-3 py-1.5 rounded-xl border text-xs font-mono ${inputClass}`}
@@ -4629,8 +4628,8 @@ Thank you for choosing Cars9 Studio!`;
                         <span className="font-bold">₹{quoteSubtotal.toLocaleString("en-IN")}</span>
                       </div>
                       <div className="flex justify-between opacity-80">
-                        <span>Total Studio Labor:</span>
-                        <span className="font-bold">₹{quoteLaborTotal.toLocaleString("en-IN")}</span>
+                        <span>Total Installation Charges:</span>
+                        <span className="font-bold">₹{quoteInstallationTotal.toLocaleString("en-IN")}</span>
                       </div>
 
                       <div className="flex items-center justify-between pt-1">
@@ -4643,10 +4642,45 @@ Thank you for choosing Cars9 Studio!`;
                         />
                       </div>
 
-                      <div className="flex justify-between opacity-80">
-                        <span>GST (18%):</span>
-                        <span className="font-bold">₹{quoteGst.toLocaleString("en-IN")}</span>
+                      {/* GST Toggle and Custom Rate */}
+                      <div className="flex items-center justify-between pt-1.5 border-t border-dashed border-slate-200 dark:border-slate-800">
+                        <div className="flex items-center gap-2">
+                          <span className="opacity-80">GST Calculation:</span>
+                          <button
+                            type="button"
+                            onClick={() => setIsGstEnabled((prev) => !prev)}
+                            className={`px-2.5 py-1 rounded-lg text-[10px] font-bold tracking-wider uppercase transition cursor-pointer ${
+                              isGstEnabled
+                                ? "bg-emerald-600 text-white shadow-sm"
+                                : "bg-slate-200 dark:bg-slate-800 text-slate-500"
+                            }`}
+                          >
+                            {isGstEnabled ? "ENABLED" : "EXEMPTED / OFF"}
+                          </button>
+                        </div>
+                        {isGstEnabled ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[11px] opacity-70">Rate (%):</span>
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={customGstRate}
+                              onChange={(e) => setCustomGstRate(Number(e.target.value))}
+                              className={`w-16 px-2 py-0.5 rounded-lg border text-right text-xs font-bold ${inputClass}`}
+                            />
+                          </div>
+                        ) : (
+                          <span className="text-[11px] text-amber-500 font-bold">₹0 (Exempted)</span>
+                        )}
                       </div>
+
+                      {isGstEnabled && (
+                        <div className="flex justify-between opacity-80">
+                          <span>GST ({customGstRate}%):</span>
+                          <span className="font-bold">₹{quoteGst.toLocaleString("en-IN")}</span>
+                        </div>
+                      )}
 
                       <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex justify-between text-sm font-black">
                         <span>GRAND TOTAL:</span>
@@ -4659,7 +4693,7 @@ Thank you for choosing Cars9 Studio!`;
                       <button
                         onClick={handleSaveAndFinalizeQuotation}
                         disabled={savingQuote}
-                        className="w-full py-3 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-extrabold uppercase tracking-wider text-xs shadow-md transition flex items-center justify-center gap-2"
+                        className="w-full py-3 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-extrabold uppercase tracking-wider text-xs shadow-md transition flex items-center justify-center gap-2 cursor-pointer"
                       >
                         {savingQuote ? (
                           <span>SAVING & FINALIZING QUOTATION...</span>
@@ -4671,21 +4705,30 @@ Thank you for choosing Cars9 Studio!`;
                         )}
                       </button>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                         <button
                           onClick={handleShareQuoteWhatsApp}
-                          className="py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-2"
+                          className="py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer"
                         >
-                          <MessageSquare className="w-4 h-4" />
-                          <span>Dispatch on WhatsApp</span>
+                          <MessageSquare className="w-4 h-4 shrink-0" />
+                          <span>Dispatch WhatsApp</span>
+                        </button>
+
+                        <button
+                          onClick={() => setShowPrintQuoteModal(true)}
+                          className="py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer"
+                          title="Print official quotation / save as PDF"
+                        >
+                          <Printer className="w-4 h-4 shrink-0" />
+                          <span>Print Quotation</span>
                         </button>
 
                         <button
                           onClick={handleCopyQuoteLink}
-                          className="py-2.5 px-3 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-xs transition flex items-center justify-center gap-2"
+                          className="py-2.5 px-3 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
                         >
-                          {copiedLink ? <Check className="w-4 h-4 text-emerald-500" /> : <Share2 className="w-4 h-4" />}
-                          <span>{copiedLink ? "Link Copied!" : "Copy Quotation Link"}</span>
+                          {copiedLink ? <Check className="w-4 h-4 text-emerald-500 shrink-0" /> : <Share2 className="w-4 h-4 shrink-0" />}
+                          <span>{copiedLink ? "Link Copied!" : "Copy Link"}</span>
                         </button>
                       </div>
                     </div>
@@ -6682,6 +6725,28 @@ Thank you for choosing Cars9 Studio!`;
                         className={`w-full px-3 py-2 rounded-xl border text-xs font-mono ${inputClass}`}
                       />
                     </div>
+
+                    {/* 5. Enquiries / Staff Quotation Dispatch */}
+                    <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2 bg-slate-50/50 dark:bg-slate-900/30">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold flex items-center gap-1.5">
+                          <span>5. Enquiries / Staff Dispatch</span>
+                        </label>
+                        <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                          Admin Enquiries Dispatch
+                        </span>
+                      </div>
+                      <p className="text-[11px] opacity-60">
+                        Target recipient when staff clicks &ldquo;Dispatch on WhatsApp&rdquo; in Quotation Pricing Desk.
+                      </p>
+                      <input
+                        type="text"
+                        value={whatsappDispatchInput}
+                        onChange={(e) => setWhatsappDispatchInput(e.target.value)}
+                        placeholder={`e.g. +91 95555 55555 (Fallback: Customer Phone / Master)`}
+                        className={`w-full px-3 py-2 rounded-xl border text-xs font-mono ${inputClass}`}
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -7505,6 +7570,231 @@ Thank you for choosing Cars9 Studio!`;
                   <Trash2 className="w-3.5 h-3.5" />
                   <span>{deleteModal.isPermanent ? "Confirm Permanent Delete" : "Confirm Delete"}</span>
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ================================================================= */}
+        {/* PRINTABLE QUOTATION MODAL (Admin & Staff Formal Printable Sheet) */}
+        {/* ================================================================= */}
+        {showPrintQuoteModal && selectedEnquiry && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm overflow-y-auto flex items-center justify-center p-4 print:p-0 print:bg-white print:static">
+            <style>{`
+              @media print {
+                body * {
+                  visibility: hidden !important;
+                }
+                #quotation-print-sheet, #quotation-print-sheet * {
+                  visibility: visible !important;
+                }
+                #quotation-print-sheet {
+                  position: absolute !important;
+                  left: 0 !important;
+                  top: 0 !important;
+                  width: 100% !important;
+                  margin: 0 !important;
+                  padding: 24px !important;
+                  background: white !important;
+                  color: #0f172a !important;
+                  box-shadow: none !important;
+                  border: none !important;
+                }
+                .no-print {
+                  display: none !important;
+                }
+              }
+            `}</style>
+
+            <div className="relative w-full max-w-3xl space-y-4 my-8 print:my-0">
+              {/* Action Bar (Hidden in Print) */}
+              <div className="no-print flex items-center justify-between bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-xl border border-slate-700">
+                <div className="flex items-center gap-2">
+                  <Printer className="w-4 h-4 text-blue-400" />
+                  <span className="text-xs font-mono font-bold uppercase tracking-wider">
+                    Official Quotation Print Preview
+                  </span>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md transition active:scale-95 cursor-pointer"
+                  >
+                    <Printer className="w-3.5 h-3.5" />
+                    <span>Print Now / Save PDF</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowPrintQuoteModal(false)}
+                    className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer"
+                    title="Close"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Printable Invoice Sheet */}
+              <div
+                id="quotation-print-sheet"
+                className="bg-white text-slate-900 rounded-2xl shadow-2xl border border-slate-200 p-8 space-y-6 font-sans"
+              >
+                {/* Header */}
+                <div className="flex items-start justify-between border-b border-slate-200 pb-5">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl font-black tracking-tight text-red-600">CARS9</span>
+                      <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-slate-900 text-white">
+                        STUDIO
+                      </span>
+                    </div>
+                    <p className="text-xs font-semibold text-slate-600">
+                      Bespoke Automotive Architecture & Premium Fitments
+                    </p>
+                    <p className="text-[11px] text-slate-500 font-mono">
+                      Phone: {settings.whatsapp_dispatch_phone || settings.whatsapp_master_phone || settings.footer_phone || "+91 90000 00000"} • Web: {typeof window !== "undefined" ? window.location.origin : "cars9.com"}
+                    </p>
+                  </div>
+
+                  <div className="text-right space-y-1 font-mono">
+                    <div className="text-sm font-bold text-slate-800 uppercase tracking-wider">
+                      Official Estimate
+                    </div>
+                    <div className="text-xs text-slate-600">
+                      Ref: <span className="font-bold text-slate-900">{selectedEnquiry.id}</span>
+                    </div>
+                    <div className="text-xs text-slate-600">
+                      Date: {new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                    </div>
+                    <div className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      PRICED ESTIMATE
+                    </div>
+                  </div>
+                </div>
+
+                {/* Customer & Vehicle Details */}
+                <div className="grid grid-cols-2 gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 block">
+                      Customer Information
+                    </span>
+                    <div className="font-bold text-slate-900 text-sm">{selectedEnquiry.customerName}</div>
+                    <div className="font-mono text-slate-600">Phone: {selectedEnquiry.customerPhone || "N/A"}</div>
+                    {selectedEnquiry.customerEmail && (
+                      <div className="font-mono text-slate-600">Email: {selectedEnquiry.customerEmail}</div>
+                    )}
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 block">
+                      Vehicle Fitment
+                    </span>
+                    <div className="font-bold text-slate-900 text-sm">
+                      {selectedEnquiry.vehicleBrand} {selectedEnquiry.vehicleModel}
+                    </div>
+                    <div className="font-mono text-slate-600">
+                      Model Year: {selectedEnquiry.vehicleYear || "All Compatible Years"}
+                    </div>
+                    <div className="font-mono text-slate-500 text-[11px]">
+                      Coupler-to-coupler plug & play installation
+                    </div>
+                  </div>
+                </div>
+
+                {/* Itemized Table */}
+                <div className="overflow-hidden rounded-xl border border-slate-200">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="bg-slate-100 border-b border-slate-200 text-slate-700 font-mono text-[11px] uppercase">
+                        <th className="py-2.5 px-3">#</th>
+                        <th className="py-2.5 px-3">Component / Accessory</th>
+                        <th className="py-2.5 px-3 text-center">Qty</th>
+                        <th className="py-2.5 px-3 text-right">Unit Price</th>
+                        <th className="py-2.5 px-3 text-right">Installation</th>
+                        <th className="py-2.5 px-3 text-right">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 font-mono">
+                      {pricingItems.map((item, idx) => {
+                        const lineItemTotal =
+                          (Number(item.unitPrice) || 0) * (Number(item.quantity) || 1) +
+                          (Number(item.installationCharge ?? item.laborCharge) || 0);
+                        return (
+                          <tr key={idx} className="hover:bg-slate-50/50">
+                            <td className="py-2.5 px-3 text-slate-400 font-bold">{idx + 1}</td>
+                            <td className="py-2.5 px-3 font-sans">
+                              <div className="font-bold text-slate-900">{item.name}</div>
+                              {item.sku && <div className="text-[10px] font-mono text-slate-500">SKU: {item.sku}</div>}
+                            </td>
+                            <td className="py-2.5 px-3 text-center font-bold">{item.quantity || 1}</td>
+                            <td className="py-2.5 px-3 text-right">
+                              ₹{(Number(item.unitPrice) || 0).toLocaleString("en-IN")}
+                            </td>
+                            <td className="py-2.5 px-3 text-right">
+                              ₹{(Number(item.installationCharge ?? item.laborCharge) || 0).toLocaleString("en-IN")}
+                            </td>
+                            <td className="py-2.5 px-3 text-right font-bold text-slate-900">
+                              ₹{lineItemTotal.toLocaleString("en-IN")}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Financial Summary */}
+                <div className="flex justify-end">
+                  <div className="w-80 space-y-2 font-mono text-xs p-4 rounded-xl bg-slate-50 border border-slate-200">
+                    <div className="flex justify-between text-slate-600">
+                      <span>Components Subtotal:</span>
+                      <span className="font-bold text-slate-900">₹{quoteSubtotal.toLocaleString("en-IN")}</span>
+                    </div>
+                    <div className="flex justify-between text-slate-600">
+                      <span>Installation Charges:</span>
+                      <span className="font-bold text-slate-900">₹{quoteInstallationTotal.toLocaleString("en-IN")}</span>
+                    </div>
+                    {Number(quoteDiscount) > 0 && (
+                      <div className="flex justify-between text-emerald-600 font-bold">
+                        <span>Studio Discount:</span>
+                        <span>-₹{Number(quoteDiscount).toLocaleString("en-IN")}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-slate-600">
+                      <span>{isGstEnabled ? `GST (${customGstRate}%):` : "GST:"}</span>
+                      <span className="font-bold text-slate-900">
+                        {isGstEnabled ? `₹${quoteGst.toLocaleString("en-IN")}` : "Exempted / 0%"}
+                      </span>
+                    </div>
+                    <div className="pt-2 border-t border-slate-300 flex justify-between text-base font-black text-slate-950">
+                      <span>GRAND TOTAL:</span>
+                      <span className="text-red-600">₹{quoteGrandTotal.toLocaleString("en-IN")}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Studio Terms & Warranty Assurance */}
+                <div className="border-t border-slate-200 pt-4 text-[11px] text-slate-500 space-y-1">
+                  <div className="font-bold text-slate-700">Studio Guarantee & Installation Terms:</div>
+                  <ul className="list-disc pl-4 space-y-0.5 text-[10px]">
+                    <li>OEM wiring integrity preserved with dedicated coupler-to-coupler harness connectors.</li>
+                    <li>Digital studio warranty card issued upon vehicle bay handover.</li>
+                    <li>Estimates valid for 15 days from issuance date. Bay slots subject to advance reservation.</li>
+                  </ul>
+                </div>
+
+                {/* Signature Block */}
+                <div className="pt-6 flex justify-between items-end border-t border-slate-200 text-xs">
+                  <div className="space-y-8">
+                    <div className="h-0.5 w-40 bg-slate-300" />
+                    <span className="text-[11px] font-mono text-slate-600">Customer Signature / Acceptance</span>
+                  </div>
+                  <div className="space-y-8 text-right">
+                    <div className="h-0.5 w-48 bg-slate-300 ml-auto" />
+                    <span className="text-[11px] font-mono text-slate-600">Authorized Signatory • Cars9 Studio</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

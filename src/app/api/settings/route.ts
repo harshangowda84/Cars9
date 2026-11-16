@@ -40,6 +40,7 @@ export const defaultSettings: Record<string, any> = {
   whatsapp_footer_phone: "",
   whatsapp_pdp_phone: "",
   whatsapp_quotation_phone: "",
+  whatsapp_dispatch_phone: "",
 
   // Car Brands Custom Homepage Display Order
   brand_order: [],
