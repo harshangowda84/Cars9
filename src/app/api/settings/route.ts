@@ -51,6 +51,9 @@ export const defaultSettings: Record<string, any> = {
   plp_showVehicleCascade: true,
   plp_showBadges: true,
   plp_enableHoverZoom: true,
+  plp_enableHoverSlideshow: true,
+  plp_slideshowInterval: 1.5,
+  plp_showShareButton: true,
 
   // PDP Settings (All on/off switches)
   pdp_showCadSchematic: true,
@@ -64,6 +67,8 @@ export const defaultSettings: Record<string, any> = {
   pdp_showWhatsInBoxTab: true,
   pdp_showInstallationProtocolTab: true,
   pdp_showRelatedProducts: true,
+  pdp_enableSlideshow: true,
+  pdp_slideshowInterval: 2,
 };
 
 export async function GET(request: NextRequest) {

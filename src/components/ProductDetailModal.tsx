@@ -34,11 +34,17 @@ export function ProductDetailModal({ product, onClose, selectedVehicle }: Produc
   const [copiedLink, setCopiedLink] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isManuallyStopped, setIsManuallyStopped] = useState(false);
+
+  // Auto-play slideshow interval config from admin settings
+  const isSlideshowEnabled = settings.pdp_enableSlideshow !== false;
+  const slideshowIntervalSec = Math.max(1, Number(settings.pdp_slideshowInterval) || 2);
 
   // Reset active media when product changes
   useEffect(() => {
     setActiveMediaIndex(0);
     setIsHovered(false);
+    setIsManuallyStopped(false);
   }, [product?.id]);
 
   if (!product) return null;
@@ -52,14 +58,14 @@ export function ProductDetailModal({ product, onClose, selectedVehicle }: Produc
   const hasVideo = Boolean(product.videoUrl) && (settings.pdp_showVideoPlayer !== false);
   const isViewingVideo = hasVideo && activeMediaIndex === imageList.length;
 
-  // Auto-play slideshow every 2 seconds (pauses on hover or when video is viewed)
+  // Auto-play slideshow (pauses on hover, video, or user tap on image)
   useEffect(() => {
-    if (isViewingVideo || isHovered || imageList.length <= 1) return;
+    if (!isSlideshowEnabled || isManuallyStopped || isViewingVideo || isHovered || imageList.length <= 1) return;
     const interval = setInterval(() => {
       setActiveMediaIndex((prev) => (prev + 1) % imageList.length);
-    }, 2000);
+    }, slideshowIntervalSec * 1000);
     return () => clearInterval(interval);
-  }, [isViewingVideo, isHovered, imageList.length]);
+  }, [isSlideshowEnabled, isManuallyStopped, isViewingVideo, isHovered, imageList.length, slideshowIntervalSec]);
 
   const isInCart = items.some((i) => i.id === product.id);
 
@@ -131,9 +137,11 @@ Please share custom quotation, studio bay availability & installation schedule.`
               
               {/* Main Media Viewer */}
               <div 
-                className="relative aspect-4/3 w-full rounded-2xl overflow-hidden bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-center group"
+                className="relative aspect-4/3 w-full rounded-2xl overflow-hidden bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-center group cursor-pointer"
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
+                onClick={() => setIsManuallyStopped((prev) => !prev)}
+                title={isManuallyStopped ? "Click to resume slideshow" : "Click on image to stop slideshow"}
               >
                 {isViewingVideo ? (
                   <div className="w-full h-full flex items-center justify-center bg-black">
@@ -153,8 +161,16 @@ Please share custom quotation, studio bay availability & installation schedule.`
                 )}
 
                 {product.badge && settings.plp_showBadges !== false && (
-                  <div className="absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-mono font-bold bg-red-600 text-white shadow-md">
+                  <div className="absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-mono font-bold bg-red-600 text-white shadow-md z-10">
                     {product.badge}
+                  </div>
+                )}
+
+                {/* Slideshow Paused Indicator */}
+                {isManuallyStopped && !isViewingVideo && isSlideshowEnabled && imageList.length > 1 && (
+                  <div className="absolute top-3 right-3 z-10 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md text-[10px] font-mono text-amber-400 flex items-center gap-1.5 border border-amber-500/30">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                    <span>Paused (Tap to Play)</span>
                   </div>
                 )}
 
@@ -165,7 +181,11 @@ Please share custom quotation, studio bay availability & installation schedule.`
                       <button
                         key={i}
                         type="button"
-                        onClick={() => setActiveMediaIndex(i)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveMediaIndex(i);
+                          setIsManuallyStopped(true);
+                        }}
                         className={`h-1.5 rounded-full transition-all ${
                           activeMediaIndex === i ? "w-5 bg-red-500" : "w-1.5 bg-white/50 hover:bg-white"
                         }`}
@@ -181,7 +201,10 @@ Please share custom quotation, studio bay availability & installation schedule.`
                 {imageList.map((img, idx) => (
                   <button
                     key={idx}
-                    onClick={() => setActiveMediaIndex(idx)}
+                    onClick={() => {
+                      setActiveMediaIndex(idx);
+                      setIsManuallyStopped(true);
+                    }}
                     className={`relative w-16 h-16 sm:w-20 sm:h-20 shrink-0 rounded-xl overflow-hidden border-2 transition-all ${
                       activeMediaIndex === idx && !isViewingVideo
                         ? "border-red-600 scale-95 shadow-md"

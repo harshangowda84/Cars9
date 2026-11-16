@@ -46,6 +46,9 @@ export interface SiteSettings {
   plp_showVehicleCascade: boolean;
   plp_showBadges: boolean;
   plp_enableHoverZoom: boolean;
+  plp_enableHoverSlideshow: boolean;
+  plp_slideshowInterval: number;
+  plp_showShareButton: boolean;
 
   // PDP Settings
   pdp_showCadSchematic: boolean;
@@ -59,6 +62,8 @@ export interface SiteSettings {
   pdp_showWhatsInBoxTab: boolean;
   pdp_showInstallationProtocolTab: boolean;
   pdp_showRelatedProducts: boolean;
+  pdp_enableSlideshow: boolean;
+  pdp_slideshowInterval: number;
   [key: string]: any;
 }
 
@@ -101,6 +106,9 @@ const defaultSettings: SiteSettings = {
   plp_showVehicleCascade: true,
   plp_showBadges: true,
   plp_enableHoverZoom: true,
+  plp_enableHoverSlideshow: true,
+  plp_slideshowInterval: 1.5,
+  plp_showShareButton: true,
 
   pdp_showCadSchematic: true,
   pdp_showVideoPlayer: true,
@@ -113,6 +121,8 @@ const defaultSettings: SiteSettings = {
   pdp_showWhatsInBoxTab: true,
   pdp_showInstallationProtocolTab: true,
   pdp_showRelatedProducts: true,
+  pdp_enableSlideshow: true,
+  pdp_slideshowInterval: 2,
 };
 
 interface SettingsContextType {

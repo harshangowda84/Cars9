@@ -69,12 +69,15 @@ function ProductCardItem({
     return list.length > 0 ? list : [item.imageUrl || "/images/placeholder.jpg"];
   }, [item.imageUrl, item.images]);
 
-  // Smooth auto-cycling through images while hovering (1.5s interval)
+  // Smooth auto-cycling through images while hovering (configurable interval & on/off)
+  const isHoverSlideshowEnabled = settings.plp_enableHoverSlideshow !== false;
+  const plpIntervalSec = Math.max(0.5, Number(settings.plp_slideshowInterval) || 1.5);
+
   useEffect(() => {
-    if (isHovered && allImages.length > 1) {
+    if (isHoverSlideshowEnabled && isHovered && allImages.length > 1) {
       cycleIntervalRef.current = setInterval(() => {
         setActiveImageIndex((prev) => (prev + 1) % allImages.length);
-      }, 1500);
+      }, plpIntervalSec * 1000);
     } else {
       if (cycleIntervalRef.current) {
         clearInterval(cycleIntervalRef.current);
@@ -87,7 +90,7 @@ function ProductCardItem({
         clearInterval(cycleIntervalRef.current);
       }
     };
-  }, [isHovered, allImages.length]);
+  }, [isHoverSlideshowEnabled, isHovered, allImages.length, plpIntervalSec]);
 
   return (
     <div
@@ -205,14 +208,16 @@ function ProductCardItem({
             </button>
           )}
 
-          {/* Share Modal Trigger */}
-          <button
-            onClick={() => onShareProduct(item)}
-            className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700/80 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white"
-            title="Share Product"
-          >
-            <Share2 className="w-4 h-4" />
-          </button>
+          {/* Share Modal Trigger (Admin On/Off Controlled) */}
+          {settings.plp_showShareButton !== false && (
+            <button
+              onClick={() => onShareProduct(item)}
+              className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700/80 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white"
+              title="Share Product"
+            >
+              <Share2 className="w-4 h-4" />
+            </button>
+          )}
 
           {/* Add to Enquiry List Button (does NOT open drawer on PLP) */}
           <button

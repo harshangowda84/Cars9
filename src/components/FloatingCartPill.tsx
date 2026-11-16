@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 import { ShoppingBag, ArrowRight } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 
 export function FloatingCartPill() {
+  const pathname = usePathname();
   const { totalItems, isCartDrawerOpen, setIsCartDrawerOpen } = useCart();
 
   const [isHovered, setIsHovered] = useState(false);
@@ -82,8 +84,11 @@ export function FloatingCartPill() {
     setIsCartDrawerOpen(true);
   };
 
-  // Do not render before hydration, or when cart is empty, or when drawer is open
-  if (!mounted || totalItems === 0 || isCartDrawerOpen) {
+  // Cart float button should strictly only show on PLP ("/") or PDP ("/products/...")
+  const isAllowedPage = pathname === "/" || (pathname ? pathname.startsWith("/products") : false);
+
+  // Do not render before hydration, or when on other pages (e.g. quotation, warranty, admin), or when cart is empty, or when drawer is open
+  if (!mounted || !isAllowedPage || totalItems === 0 || isCartDrawerOpen) {
     return null;
   }
 

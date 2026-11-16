@@ -5826,6 +5826,58 @@ Thank you for choosing Cars9 Studio!`;
                   {settings.plp_showBadges ? <ToggleRight className="w-9 h-9" /> : <ToggleLeft className="w-9 h-9" />}
                 </button>
               </div>
+
+              {/* PLP Multi-Image Hover Slideshow & Timer */}
+              <div className={`${cardClass} border rounded-3xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4`}>
+                <div className="space-y-1">
+                  <h4 className="font-bold text-sm flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-amber-500" />
+                    <span>PLP Hover Image Slideshow</span>
+                  </h4>
+                  <p className="text-xs opacity-60">
+                    Cycles through all accessory gallery photos automatically when hovering over any card.
+                  </p>
+                </div>
+                <div className="flex items-center gap-4 shrink-0">
+                  <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/80 px-3 py-1.5 rounded-2xl border border-slate-200 dark:border-slate-700">
+                    <span className="text-[11px] font-mono opacity-70">Timer:</span>
+                    <input
+                      type="number"
+                      min={0.5}
+                      max={20}
+                      step={0.5}
+                      value={settings.plp_slideshowInterval ?? 1.5}
+                      onChange={(e) => updateSetting("plp_slideshowInterval", parseFloat(e.target.value) || 1.5)}
+                      className={`w-16 px-2 py-1 rounded-xl border text-xs font-mono text-center font-bold ${inputClass}`}
+                    />
+                    <span className="text-[11px] font-mono opacity-70">sec</span>
+                  </div>
+                  <button
+                    onClick={() => updateSetting("plp_enableHoverSlideshow", settings.plp_enableHoverSlideshow === false ? true : false)}
+                    className={`p-1.5 rounded-full transition ${settings.plp_enableHoverSlideshow !== false ? "text-emerald-500" : "text-slate-400"}`}
+                    title="Toggle PLP hover slideshow"
+                  >
+                    {settings.plp_enableHoverSlideshow !== false ? <ToggleRight className="w-9 h-9" /> : <ToggleLeft className="w-9 h-9" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* PLP Share Product Button */}
+              <div className={`${cardClass} border rounded-3xl p-5 flex items-center justify-between gap-4`}>
+                <div className="space-y-1">
+                  <h4 className="font-bold text-sm flex items-center gap-2">
+                    <Share2 className="w-4 h-4 text-red-500" />
+                    <span>PLP Product Share Icon</span>
+                  </h4>
+                  <p className="text-xs opacity-60">Shows or hides the direct Share Modal button on each card in catalog listing.</p>
+                </div>
+                <button
+                  onClick={() => updateSetting("plp_showShareButton", settings.plp_showShareButton === false ? true : false)}
+                  className={`p-1.5 rounded-full transition ${settings.plp_showShareButton !== false ? "text-emerald-500" : "text-slate-400"}`}
+                >
+                  {settings.plp_showShareButton !== false ? <ToggleRight className="w-9 h-9" /> : <ToggleLeft className="w-9 h-9" />}
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -5937,6 +5989,41 @@ Thank you for choosing Cars9 Studio!`;
                 >
                   {settings.pdp_showCompatibilityBanner ? <ToggleRight className="w-9 h-9" /> : <ToggleLeft className="w-9 h-9" />}
                 </button>
+              </div>
+
+              {/* PDP Auto-Play Gallery Slideshow & Timer Box */}
+              <div className={`${cardClass} border rounded-3xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:col-span-2`}>
+                <div className="space-y-1">
+                  <h4 className="font-bold text-sm flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-amber-500" />
+                    <span>PDP Auto-Play Gallery Slideshow</span>
+                  </h4>
+                  <p className="text-xs opacity-60">
+                    Automatically plays through accessory photos in sequence. Tap/click on any photo instantly stops the slideshow.
+                  </p>
+                </div>
+                <div className="flex items-center gap-4 shrink-0">
+                  <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/80 px-3 py-1.5 rounded-2xl border border-slate-200 dark:border-slate-700">
+                    <span className="text-[11px] font-mono opacity-70">Duration:</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={30}
+                      step={1}
+                      value={settings.pdp_slideshowInterval ?? 2}
+                      onChange={(e) => updateSetting("pdp_slideshowInterval", parseFloat(e.target.value) || 2)}
+                      className={`w-16 px-2 py-1 rounded-xl border text-xs font-mono text-center font-bold ${inputClass}`}
+                    />
+                    <span className="text-[11px] font-mono opacity-70">sec</span>
+                  </div>
+                  <button
+                    onClick={() => updateSetting("pdp_enableSlideshow", settings.pdp_enableSlideshow === false ? true : false)}
+                    className={`p-1.5 rounded-full transition ${settings.pdp_enableSlideshow !== false ? "text-emerald-500" : "text-slate-400"}`}
+                    title="Toggle PDP auto slideshow"
+                  >
+                    {settings.pdp_enableSlideshow !== false ? <ToggleRight className="w-9 h-9" /> : <ToggleLeft className="w-9 h-9" />}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

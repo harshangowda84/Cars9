@@ -46,6 +46,11 @@ export default function ProductDetailPage() {
   const [activeTab, setActiveTab] = useState<"specs" | "inbox" | "installation">("specs");
   const [isHovered, setIsHovered] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isManuallyStopped, setIsManuallyStopped] = useState(false);
+
+  // Auto-play slideshow interval config from admin settings
+  const isSlideshowEnabled = settings.pdp_enableSlideshow !== false;
+  const slideshowIntervalSec = Math.max(1, Number(settings.pdp_slideshowInterval) || 2);
 
   // Media gallery: 5 to 6 images + 1 video as the final slide
   const imageList = product?.images && product.images.length > 0 
@@ -85,14 +90,14 @@ export default function ProductDetailPage() {
     loadProduct();
   }, [id]);
 
-  // Auto-play slideshow every 2 seconds (pauses on hover or when video is viewed)
+  // Auto-play slideshow (pauses on hover, video, or user tap on image)
   useEffect(() => {
-    if (!product || isViewingVideo || isHovered || imageList.length <= 1) return;
+    if (!isSlideshowEnabled || isManuallyStopped || !product || isViewingVideo || isHovered || imageList.length <= 1) return;
     const interval = setInterval(() => {
       setActiveMediaIndex((prev) => (prev + 1) % imageList.length);
-    }, 2000);
+    }, slideshowIntervalSec * 1000);
     return () => clearInterval(interval);
-  }, [product, isViewingVideo, isHovered, imageList.length]);
+  }, [isSlideshowEnabled, isManuallyStopped, product, isViewingVideo, isHovered, imageList.length, slideshowIntervalSec]);
 
   if (loading) {
     return (
@@ -173,9 +178,11 @@ Please share custom quotation, studio bay availability & installation schedule.`
             
             {/* Primary High-Res Viewer */}
             <div 
-              className="relative aspect-4/3 w-full rounded-3xl overflow-hidden bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-2xl flex items-center justify-center group"
+              className="relative aspect-4/3 w-full rounded-3xl overflow-hidden bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-2xl flex items-center justify-center group cursor-pointer"
               onMouseEnter={() => setIsHovered(true)}
               onMouseLeave={() => setIsHovered(false)}
+              onClick={() => setIsManuallyStopped((prev) => !prev)}
+              title={isManuallyStopped ? "Click to resume slideshow" : "Click on image to stop slideshow"}
             >
               {isViewingVideo ? (
                 <div className="w-full h-full flex items-center justify-center bg-black">
@@ -204,12 +211,23 @@ Please share custom quotation, studio bay availability & installation schedule.`
               {/* Share Product Modal Button (Admin On/Off Controlled) */}
               {settings.pdp_showDirectShareLink !== false && (
                 <button
-                  onClick={() => setIsShareModalOpen(true)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsShareModalOpen(true);
+                  }}
                   className="absolute top-4 right-4 p-2.5 rounded-2xl bg-black/50 hover:bg-black/80 backdrop-blur-md text-white transition cursor-pointer z-10 active:scale-95"
                   title="Share Accessory"
                 >
                   <Share2 className="w-4 h-4" />
                 </button>
+              )}
+
+              {/* Slideshow Paused Indicator */}
+              {isManuallyStopped && !isViewingVideo && isSlideshowEnabled && imageList.length > 1 && (
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 px-3 py-1 rounded-full bg-black/70 backdrop-blur-md text-[10px] font-mono text-amber-400 flex items-center gap-1.5 border border-amber-500/30">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                  <span>Slideshow Paused (Tap to Resume)</span>
+                </div>
               )}
 
               {/* Slideshow Progress Dot Indicator */}
@@ -219,7 +237,11 @@ Please share custom quotation, studio bay availability & installation schedule.`
                     <button
                       key={i}
                       type="button"
-                      onClick={() => setActiveMediaIndex(i)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveMediaIndex(i);
+                        setIsManuallyStopped(true);
+                      }}
                       className={`h-1.5 rounded-full transition-all ${
                         activeMediaIndex === i ? "w-5 bg-red-500" : "w-1.5 bg-white/50 hover:bg-white"
                       }`}
@@ -235,7 +257,10 @@ Please share custom quotation, studio bay availability & installation schedule.`
               {imageList.map((img, idx) => (
                 <button
                   key={idx}
-                  onClick={() => setActiveMediaIndex(idx)}
+                  onClick={() => {
+                    setActiveMediaIndex(idx);
+                    setIsManuallyStopped(true);
+                  }}
                   className={`relative w-20 h-20 sm:w-24 sm:h-24 shrink-0 rounded-2xl overflow-hidden border-2 transition-all ${
                     activeMediaIndex === idx && !isViewingVideo
                       ? "border-red-600 scale-95 shadow-md"
