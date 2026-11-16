@@ -1,19 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { useCart } from "@/context/CartContext";
+import { useCart, CartItem } from "@/context/CartContext";
 import { 
   X, 
   Trash2, 
   Plus, 
   Minus, 
-  Share2, 
   Check, 
   FileText, 
   ShoppingBag,
-  ExternalLink,
-  ShieldCheck
+  RotateCcw
 } from "lucide-react";
 
 export function CartDrawer() {
@@ -24,21 +22,39 @@ export function CartDrawer() {
     updateQuantity, 
     removeFromCart, 
     clearCart,
-    generateShareableLink 
+    loadItemsFromData
   } = useCart();
 
-  const [copied, setCopied] = useState(false);
+  // 5-second Undo state for Clear All Items
+  const [undoBackup, setUndoBackup] = useState<{ items: CartItem[]; seconds: number } | null>(null);
 
-  if (!isCartDrawerOpen) return null;
+  useEffect(() => {
+    if (!undoBackup) return;
+    if (undoBackup.seconds <= 0) {
+      setUndoBackup(null);
+      return;
+    }
+    const timer = setTimeout(() => {
+      setUndoBackup((prev) => (prev ? { ...prev, seconds: prev.seconds - 1 } : null));
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [undoBackup]);
 
-  const handleCopyShareLink = () => {
-    const link = generateShareableLink();
-    if (link && typeof window !== "undefined") {
-      navigator.clipboard.writeText(link);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
+  const handleClearAll = () => {
+    if (items.length === 0) return;
+    const backup = [...items];
+    clearCart();
+    setUndoBackup({ items: backup, seconds: 5 });
+  };
+
+  const handleUndoClear = () => {
+    if (undoBackup && undoBackup.items.length > 0) {
+      loadItemsFromData(undoBackup.items);
+      setUndoBackup(null);
     }
   };
+
+  if (!isCartDrawerOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden animate-in fade-in duration-200">
@@ -74,6 +90,22 @@ export function CartDrawer() {
               <X className="w-5 h-5" />
             </button>
           </div>
+
+          {/* 5-Second Undo Notification Banner */}
+          {undoBackup && (
+            <div className="mx-6 mt-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-between text-xs animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-medium">
+                <RotateCcw className="w-4 h-4 animate-spin-reverse" />
+                <span>Cart cleared ({undoBackup.seconds}s remaining)</span>
+              </div>
+              <button
+                onClick={handleUndoClear}
+                className="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-sm transition text-xs active:scale-95"
+              >
+                Undo
+              </button>
+            </div>
+          )}
 
           {/* Cart Item List */}
           <div className="flex-1 overflow-y-auto p-6 space-y-4">
@@ -147,16 +179,6 @@ export function CartDrawer() {
           {/* Footer Actions */}
           {items.length > 0 && (
             <div className="p-6 border-t border-slate-100 dark:border-slate-800 space-y-3 bg-slate-50/50 dark:bg-slate-950/50">
-              
-              {/* Shareable Link Button */}
-              <button
-                onClick={handleCopyShareLink}
-                className="w-full py-3 px-4 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-bold flex items-center justify-center gap-2 transition"
-              >
-                {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Share2 className="w-4 h-4" />}
-                <span>{copied ? "Link Copied to Clipboard!" : "Copy Shareable Link for Owner / Team"}</span>
-              </button>
-
               {/* Proceed to Full Quotation Page */}
               <Link
                 href="/quotation"
@@ -168,7 +190,7 @@ export function CartDrawer() {
               </Link>
 
               <button
-                onClick={clearCart}
+                onClick={handleClearAll}
                 className="w-full text-center text-[11px] text-slate-400 hover:text-red-500 transition py-1"
               >
                 Clear All Items

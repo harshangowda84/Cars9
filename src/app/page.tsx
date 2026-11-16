@@ -13,6 +13,7 @@ import { Cars9Logo } from "@/components/Cars9Logo";
 import { GoogleMapsLogo } from "@/components/GoogleMapsLogo";
 import { Footer } from "@/components/Footer";
 import { useSettings } from "@/context/SettingsContext";
+import { useCart } from "@/context/CartContext";
 import { 
   Car, 
   ShieldCheck, 
@@ -35,6 +36,14 @@ function HomeContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { settings } = useSettings();
+  const { setIsCartDrawerOpen } = useCart();
+
+  // If user navigates from quotation back to cart (?openCart=true)
+  useEffect(() => {
+    if (searchParams.get("openCart") === "true") {
+      setIsCartDrawerOpen(true);
+    }
+  }, [searchParams, setIsCartDrawerOpen]);
 
   // Data states
   const [brands, setBrands] = useState<Brand[]>(initialBrands);
@@ -394,15 +403,23 @@ function HomeContent() {
                 </div>
               </Link>
 
-              <div className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white dark:bg-[#0f1523] border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-2 sm:gap-2.5">
-                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-                  <Volume2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <a
+                href={`https://wa.me/${(settings.footer_phone || "919000000000").replace(/\D/g, "")}?text=${encodeURIComponent("Hello Cars9 Studio! I am interested in custom accessories and fitment consultation.")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white dark:bg-[#0f1523] border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-2 sm:gap-2.5 hover:border-emerald-500/50 hover:bg-emerald-50/20 dark:hover:bg-emerald-950/20 transition group cursor-pointer"
+                title="Chat Directly with Studio on WhatsApp"
+              >
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-[#25D366]/15 text-[#25D366] flex items-center justify-center shrink-0 group-hover:bg-[#25D366] group-hover:text-white transition-colors">
+                  <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current" viewBox="0 0 24 24">
+                    <path d="M12.031 2C6.495 2 2 6.494 2 12.03c0 1.97.57 3.81 1.554 5.37L2 22l4.77-1.523A9.975 9.975 0 0 0 12.031 22c5.535 0 10.03-4.494 10.03-10.03C22.062 6.494 17.566 2 12.031 2zm5.82 14.28c-.24.67-1.39 1.28-1.92 1.34-.49.06-1.12.08-3.6-1.02-2.98-1.32-4.88-4.37-5.03-4.57-.15-.2-1.2-1.6-1.2-3.05 0-1.45.75-2.16 1.02-2.45.27-.29.59-.36.79-.36.2 0 .4 0 .58.01.19.01.44-.07.69.52.26.61.88 2.14.96 2.3.08.15.13.34.02.54-.1.2-.16.32-.31.5-.15.18-.32.4-.46.54-.15.15-.31.32-.13.63.18.31.79 1.3 1.7 2.11 1.17 1.04 2.15 1.36 2.46 1.51.31.15.49.13.67-.08.18-.21.78-.91.99-1.22.21-.31.42-.26.71-.15.29.11 1.84.87 2.15 1.03.31.15.52.23.6.36.08.14.08.79-.16 1.46z" />
+                  </svg>
                 </div>
                 <div className="min-w-0">
-                  <span className="block text-[11px] sm:text-xs font-extrabold text-slate-900 dark:text-white truncate">Acoustic Tuning</span>
-                  <span className="text-[9px] sm:text-[10px] text-slate-400 font-mono truncate block">31-Band DSP</span>
+                  <span className="block text-[11px] sm:text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-[#25D366] transition-colors truncate">WhatsApp Studio</span>
+                  <span className="text-[9px] sm:text-[10px] text-slate-400 font-mono truncate block">Direct Studio Chat &rarr;</span>
                 </div>
-              </div>
+              </a>
 
               <a
                 href={settings.footer_maps_url || "https://maps.google.com/?q=Cars9+Automotive+Studio+Bangalore"}

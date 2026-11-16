@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { CarPart } from "@/data/mockData";
 import { useCart } from "@/context/CartContext";
 import { useSettings } from "@/context/SettingsContext";
 import { getDisplayImageUrl } from "@/lib/imageUrl";
+import { ShareProductModal } from "@/components/ShareProductModal";
 import { 
   X, 
   ShieldCheck, 
@@ -31,6 +32,14 @@ export function ProductDetailModal({ product, onClose, selectedVehicle }: Produc
   const { settings } = useSettings();
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+
+  // Reset active media when product changes
+  useEffect(() => {
+    setActiveMediaIndex(0);
+    setIsHovered(false);
+  }, [product?.id]);
 
   if (!product) return null;
 
@@ -42,6 +51,15 @@ export function ProductDetailModal({ product, onClose, selectedVehicle }: Produc
   // Total media includes video at the end if available and enabled
   const hasVideo = Boolean(product.videoUrl) && (settings.pdp_showVideoPlayer !== false);
   const isViewingVideo = hasVideo && activeMediaIndex === imageList.length;
+
+  // Auto-play slideshow every 2 seconds (pauses on hover or when video is viewed)
+  useEffect(() => {
+    if (isViewingVideo || isHovered || imageList.length <= 1) return;
+    const interval = setInterval(() => {
+      setActiveMediaIndex((prev) => (prev + 1) % imageList.length);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [isViewingVideo, isHovered, imageList.length]);
 
   const isInCart = items.some((i) => i.id === product.id);
 
@@ -88,11 +106,11 @@ Please share custom quotation, studio bay availability & installation schedule.`
           <div className="flex items-center gap-2">
             {settings.pdp_showDirectShareLink !== false && (
               <button
-                onClick={handleCopyLink}
-                title="Copy share link"
+                onClick={() => setIsShareModalOpen(true)}
+                title="Share product"
                 className="p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition"
               >
-                {copiedLink ? <Check className="w-4 h-4 text-emerald-500" /> : <Share2 className="w-4 h-4" />}
+                <Share2 className="w-4 h-4" />
               </button>
             )}
             <button
@@ -112,7 +130,11 @@ Please share custom quotation, studio bay availability & installation schedule.`
             <div className="lg:col-span-7 flex flex-col gap-4">
               
               {/* Main Media Viewer */}
-              <div className="relative aspect-4/3 w-full rounded-2xl overflow-hidden bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-center">
+              <div 
+                className="relative aspect-4/3 w-full rounded-2xl overflow-hidden bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-center group"
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+              >
                 {isViewingVideo ? (
                   <div className="w-full h-full flex items-center justify-center bg-black">
                     <video
@@ -126,13 +148,30 @@ Please share custom quotation, studio bay availability & installation schedule.`
                   <img
                     src={getDisplayImageUrl(imageList[activeMediaIndex] || product.imageUrl)}
                     alt={`${product.name} - slide ${activeMediaIndex + 1}`}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover transition-opacity duration-300"
                   />
                 )}
 
                 {product.badge && settings.plp_showBadges !== false && (
                   <div className="absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-mono font-bold bg-red-600 text-white shadow-md">
                     {product.badge}
+                  </div>
+                )}
+
+                {/* Slideshow Progress Dot Indicator */}
+                {!isViewingVideo && imageList.length > 1 && (
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md z-10">
+                    {imageList.map((_, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setActiveMediaIndex(i)}
+                        className={`h-1.5 rounded-full transition-all ${
+                          activeMediaIndex === i ? "w-5 bg-red-500" : "w-1.5 bg-white/50 hover:bg-white"
+                        }`}
+                        title={`Slide ${i + 1}`}
+                      />
+                    ))}
                   </div>
                 )}
               </div>
@@ -285,6 +324,13 @@ Please share custom quotation, studio bay availability & installation schedule.`
         </div>
 
       </div>
+
+      {/* Share Product Modal */}
+      <ShareProductModal
+        product={product}
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+      />
     </div>
   );
 }

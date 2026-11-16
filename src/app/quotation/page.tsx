@@ -4,6 +4,7 @@ import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useCart, CartItem } from "@/context/CartContext";
+import { useSettings } from "@/context/SettingsContext";
 import { 
   FileText, 
   Share2, 
@@ -21,7 +22,9 @@ import {
   Trash2, 
   CheckCircle2, 
   AlertCircle,
-  Car
+  Car,
+  Plus,
+  Minus
 } from "lucide-react";
 import { Cars9Logo } from "@/components/Cars9Logo";
 
@@ -59,7 +62,8 @@ interface QuotationData {
 function QuotationContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { items: cartItems, removeFromCart, clearCart } = useCart();
+  const { items: cartItems, removeFromCart, updateQuantity, clearCart } = useCart();
+  const { settings } = useSettings();
 
   const idParam = searchParams.get("id");
 
@@ -111,9 +115,27 @@ function QuotationContent() {
   // Submit new quotation enquiry
   const handleRegisterEnquiry = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!customerName.trim() || !customerPhone.trim()) {
-      setFormError("Please enter your name and contact phone number.");
+
+    // Validation for Name
+    if (!customerName.trim()) {
+      setFormError("Please enter your full name.");
       return;
+    }
+
+    // Validation for Contact Number (required & at least 10 digits)
+    const phoneDigits = customerPhone.replace(/\D/g, "");
+    if (!customerPhone.trim() || phoneDigits.length < 10) {
+      setFormError("Please enter a valid contact phone number (at least 10 digits).");
+      return;
+    }
+
+    // Validation for Email (optional, but validate format if entered)
+    if (customerEmail.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(customerEmail.trim())) {
+        setFormError("Please enter a valid email address (or leave the email field blank).");
+        return;
+      }
     }
 
     if (cartItems.length === 0) {
@@ -174,10 +196,40 @@ function QuotationContent() {
   };
 
   const handleWhatsAppContact = () => {
-    const text = quotation
-      ? `Hello Cars9 Studio! I am inquiring about my Quotation #${quotation.id} for ${quotation.customerName} (${quotation.vehicleBrand} ${quotation.vehicleModel}). Link: ${window.location.href}`
-      : `Hello Cars9 Studio! I would like to request an estimate for vehicle accessories.`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+    if (!quotation) {
+      const targetPhone = (settings?.footer_phone || "919000000000").replace(/\D/g, "");
+      window.open(`https://wa.me/${targetPhone}?text=${encodeURIComponent("Hello Cars9 Studio! I would like to request an estimate for vehicle accessories.")}`, "_blank");
+      return;
+    }
+
+    const itemsSummary = (quotation.items || [])
+      .map((item, idx) => `  ${idx + 1}. *${item.name}* (Qty: ${item.quantity}${item.sku ? ` | SKU: ${item.sku}` : ""})`)
+      .join("\n");
+
+    const messageLines = [
+      `*NEW QUOTATION ENQUIRY - CARS9 STUDIO*`,
+      `*Quotation ID:* #${quotation.id}`,
+      `---------------------------------`,
+      `*CUSTOMER DETAILS:*`,
+      `• *Name:* ${quotation.customerName}`,
+      `• *Phone:* ${quotation.customerPhone}`,
+      quotation.customerEmail ? `• *Email:* ${quotation.customerEmail}` : `• *Email:* Not provided`,
+      `---------------------------------`,
+      `*VEHICLE SPECIFICATIONS:*`,
+      `• *Vehicle:* ${quotation.vehicleBrand || "General"} ${quotation.vehicleModel || "All Models"}`,
+      quotation.vehicleYear ? `• *Model Year:* ${quotation.vehicleYear}` : null,
+      quotation.notes ? `• *Special Requests:* "${quotation.notes}"` : null,
+      `---------------------------------`,
+      `*REQUESTED ACCESSORIES (${quotation.items?.length || 0}):*`,
+      itemsSummary || "  (No items specified)",
+      `---------------------------------`,
+      `*Enquiry Link:* ${typeof window !== "undefined" ? window.location.href : ""}`,
+      `\nPlease review fitment compatibility and send me the official studio quote.`
+    ].filter((line) => line !== null);
+
+    const message = messageLines.join("\n");
+    const targetPhone = (settings?.footer_phone || "919000000000").replace(/\D/g, "");
+    window.open(`https://wa.me/${targetPhone}?text=${encodeURIComponent(message)}`, "_blank");
   };
 
   // Loading existing quotation
@@ -210,11 +262,11 @@ function QuotationContent() {
           {/* Action Header (Hidden on Print) */}
           <div className="flex flex-wrap items-center justify-between gap-4 no-print">
             <Link
-              href="/"
+              href="/?openCart=true"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-white dark:bg-[#0f1523] border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-400 transition"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>Back to Studio Catalog</span>
+              <span>Back to Cart</span>
             </Link>
 
             <div className="flex items-center gap-2.5">
@@ -428,11 +480,11 @@ function QuotationContent() {
       <div className="min-h-screen bg-slate-50 dark:bg-[#080b11] text-slate-900 dark:text-slate-100 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl mx-auto space-y-6">
           <Link
-            href="/"
+            href="/?openCart=true"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-white dark:bg-[#0f1523] border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-400 transition"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Back to Studio Catalog</span>
+            <span>Back to Cart</span>
           </Link>
 
           <div className="bg-white dark:bg-[#0f1523] border border-slate-200 dark:border-slate-800 rounded-3xl p-8 sm:p-10 shadow-2xl text-center space-y-6">
@@ -472,16 +524,10 @@ function QuotationContent() {
               </div>
             </div>
 
-            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
-              <button
-                onClick={handleCopyLink}
-                className="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-              >
-                {copiedLink ? "Link Copied!" : "Copy Enquiry Link"}
-              </button>
+            <div className="pt-2 flex justify-center">
               <button
                 onClick={handleWhatsAppContact}
-                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md transition flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-8 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold shadow-lg shadow-emerald-600/30 transition flex items-center justify-center gap-2 active:scale-98"
               >
                 <MessageSquare className="w-4 h-4" />
                 <span>Chat with Studio on WhatsApp</span>
@@ -503,11 +549,11 @@ function QuotationContent() {
         {/* Top Header */}
         <div className="flex items-center justify-between">
           <Link
-            href="/"
+            href="/?openCart=true"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-white dark:bg-[#0f1523] border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-400 transition"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Back to Studio Catalog</span>
+            <span>Back to Cart</span>
           </Link>
 
           <Cars9Logo size="sm" />
@@ -566,14 +612,35 @@ function QuotationContent() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800">
-                          x{item.quantity}
-                        </span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {/* Quantity Increase / Decrease */}
+                        <div className="flex items-center border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden bg-white dark:bg-slate-900 shadow-2xs">
+                          <button
+                            type="button"
+                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            className="p-1 hover:text-red-500 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                            title="Decrease quantity"
+                          >
+                            <Minus className="w-3 h-3" />
+                          </button>
+                          <span className="text-xs font-mono font-bold px-2 min-w-6 text-center text-slate-900 dark:text-white">
+                            {item.quantity}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            className="p-1 hover:text-emerald-500 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                            title="Increase quantity"
+                          >
+                            <Plus className="w-3 h-3" />
+                          </button>
+                        </div>
+
                         <button
+                          type="button"
                           onClick={() => removeFromCart(item.id)}
-                          className="p-1 text-slate-400 hover:text-red-500 transition"
-                          title="Remove"
+                          className="p-1.5 text-slate-400 hover:text-red-500 transition rounded-lg hover:bg-red-500/10"
+                          title="Remove item"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>

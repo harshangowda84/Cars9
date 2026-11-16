@@ -28,6 +28,11 @@ export const defaultSettings: Record<string, any> = {
   footer_show_warranty_link: true,
   footer_show_pricing_link: true,
   footer_show_admin_link: true,
+  footer_social_instagram: "https://instagram.com/cars9studio",
+  footer_social_facebook: "https://facebook.com/cars9studio",
+  footer_social_youtube: "https://youtube.com/@cars9studio",
+  footer_social_whatsapp: "https://wa.me/919000000000",
+  footer_social_twitter: "https://x.com/cars9studio",
 
   // Fallback Default Hero Banner (Shown when no active banners)
   default_banner_title1: "ELEVATE YOUR CAR WITH",

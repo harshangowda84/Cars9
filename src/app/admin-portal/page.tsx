@@ -306,6 +306,11 @@ export default function AdminPortalPage() {
     showWarranty: true,
     showPricing: true,
     showAdmin: true,
+    socialInstagram: "",
+    socialFacebook: "",
+    socialYoutube: "",
+    socialWhatsapp: "",
+    socialTwitter: "",
   });
   const [footerSavedMsg, setFooterSavedMsg] = useState("");
   const [uploadingSiteLogo, setUploadingSiteLogo] = useState(false);
@@ -1684,6 +1689,11 @@ Thank you for choosing Cars9 Studio!`;
         showWarranty: settings.footer_show_warranty_link !== false,
         showPricing: settings.footer_show_pricing_link !== false,
         showAdmin: settings.footer_show_admin_link !== false,
+        socialInstagram: settings.footer_social_instagram || "",
+        socialFacebook: settings.footer_social_facebook || "",
+        socialYoutube: settings.footer_social_youtube || "",
+        socialWhatsapp: settings.footer_social_whatsapp || "",
+        socialTwitter: settings.footer_social_twitter || "",
       });
       setCustomLogoUrlInput(settings.site_logo_url || "");
       setDefaultBannerForm({
@@ -1815,6 +1825,11 @@ Thank you for choosing Cars9 Studio!`;
       await updateSetting("footer_show_warranty_link", footerForm.showWarranty);
       await updateSetting("footer_show_pricing_link", footerForm.showPricing);
       await updateSetting("footer_show_admin_link", footerForm.showAdmin);
+      await updateSetting("footer_social_instagram", footerForm.socialInstagram);
+      await updateSetting("footer_social_facebook", footerForm.socialFacebook);
+      await updateSetting("footer_social_youtube", footerForm.socialYoutube);
+      await updateSetting("footer_social_whatsapp", footerForm.socialWhatsapp);
+      await updateSetting("footer_social_twitter", footerForm.socialTwitter);
       
       setFooterSavedMsg("Footer settings and studio details updated successfully!");
       showToastNotice("Footer settings saved successfully!", "success");
@@ -6233,6 +6248,83 @@ Thank you for choosing Cars9 Studio!`;
                         className="w-4 h-4 accent-red-600 rounded"
                       />
                     </label>
+                  </div>
+                </div>
+
+                {/* Social Media Channels & Direct Profiles */}
+                <div className="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold uppercase tracking-wider font-mono opacity-80">
+                      Studio Social Media Profiles & Direct Links
+                    </label>
+                    <span className="text-[10px] text-slate-400 font-mono">Displayed as brand icons in footer</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div>
+                      <label className="block text-[11px] font-bold opacity-70 mb-1">
+                        Instagram Profile URL
+                      </label>
+                      <input
+                        type="url"
+                        value={footerForm.socialInstagram}
+                        onChange={(e) => setFooterForm({ ...footerForm, socialInstagram: e.target.value })}
+                        placeholder="https://instagram.com/yourhandle"
+                        className={`w-full px-4 py-2.5 rounded-xl border text-xs font-mono normal-case ${inputClass}`}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold opacity-70 mb-1">
+                        Facebook Page URL
+                      </label>
+                      <input
+                        type="url"
+                        value={footerForm.socialFacebook}
+                        onChange={(e) => setFooterForm({ ...footerForm, socialFacebook: e.target.value })}
+                        placeholder="https://facebook.com/yourpage"
+                        className={`w-full px-4 py-2.5 rounded-xl border text-xs font-mono normal-case ${inputClass}`}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold opacity-70 mb-1">
+                        YouTube Channel URL
+                      </label>
+                      <input
+                        type="url"
+                        value={footerForm.socialYoutube}
+                        onChange={(e) => setFooterForm({ ...footerForm, socialYoutube: e.target.value })}
+                        placeholder="https://youtube.com/@yourchannel"
+                        className={`w-full px-4 py-2.5 rounded-xl border text-xs font-mono normal-case ${inputClass}`}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold opacity-70 mb-1">
+                        WhatsApp Direct Chat URL / Number
+                      </label>
+                      <input
+                        type="text"
+                        value={footerForm.socialWhatsapp}
+                        onChange={(e) => setFooterForm({ ...footerForm, socialWhatsapp: e.target.value })}
+                        placeholder="https://wa.me/919000000000 or 919000000000"
+                        className={`w-full px-4 py-2.5 rounded-xl border text-xs font-mono normal-case ${inputClass}`}
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block text-[11px] font-bold opacity-70 mb-1">
+                        X (Twitter) Profile URL
+                      </label>
+                      <input
+                        type="url"
+                        value={footerForm.socialTwitter}
+                        onChange={(e) => setFooterForm({ ...footerForm, socialTwitter: e.target.value })}
+                        placeholder="https://x.com/yourhandle"
+                        className={`w-full px-4 py-2.5 rounded-xl border text-xs font-mono normal-case ${inputClass}`}
+                      />
+                    </div>
                   </div>
                 </div>
 
