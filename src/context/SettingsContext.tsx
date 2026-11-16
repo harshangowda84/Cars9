@@ -24,6 +24,14 @@ export interface SiteSettings {
   footer_show_pricing_link?: boolean;
   footer_show_admin_link?: boolean;
 
+  // Fallback Default Hero Banner (Shown when no active banners)
+  default_banner_title1?: string;
+  default_banner_title2?: string;
+  default_banner_subtitle?: string;
+  default_banner_cta?: string;
+  default_banner_image?: string;
+  default_banner_image_light?: string;
+
   // PLP Settings
   plp_showQuickPreview: boolean;
   plp_showCouplerBadge: boolean;
@@ -67,6 +75,13 @@ const defaultSettings: SiteSettings = {
   footer_show_warranty_link: true,
   footer_show_pricing_link: true,
   footer_show_admin_link: true,
+
+  default_banner_title1: "ELEVATE YOUR CAR WITH",
+  default_banner_title2: "CUSTOM ACCESSORIES",
+  default_banner_subtitle: "Discover custom 7D floor mats, Nappa leatherette seat covers, app-controlled ambient lighting, 4K dual-lens dash cams, and off-road enhancements engineered to fit your exact vehicle model.",
+  default_banner_cta: "EXPLORE BRANDS",
+  default_banner_image: "https://images.unsplash.com/photo-1617788138017-80ad40651399?q=80&w=1920&auto=format&fit=crop",
+  default_banner_image_light: "",
 
   plp_showQuickPreview: true,
   plp_showCouplerBadge: true,

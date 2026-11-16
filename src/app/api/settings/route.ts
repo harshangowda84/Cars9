@@ -29,6 +29,14 @@ export const defaultSettings: Record<string, any> = {
   footer_show_pricing_link: true,
   footer_show_admin_link: true,
 
+  // Fallback Default Hero Banner (Shown when no active banners)
+  default_banner_title1: "ELEVATE YOUR CAR WITH",
+  default_banner_title2: "CUSTOM ACCESSORIES",
+  default_banner_subtitle: "Discover custom 7D floor mats, Nappa leatherette seat covers, app-controlled ambient lighting, 4K dual-lens dash cams, and off-road enhancements engineered to fit your exact vehicle model.",
+  default_banner_cta: "EXPLORE BRANDS",
+  default_banner_image: "https://images.unsplash.com/photo-1617788138017-80ad40651399?q=80&w=1920&auto=format&fit=crop",
+  default_banner_image_light: "",
+
   // PLP Settings (All on/off switches)
   plp_showQuickPreview: true,
   plp_showCouplerBadge: true,

@@ -311,6 +311,22 @@ export default function AdminPortalPage() {
   const [uploadingSiteLogo, setUploadingSiteLogo] = useState(false);
   const [customLogoUrlInput, setCustomLogoUrlInput] = useState("");
 
+  // Default Fallback Banner Form State (Pre-populated defaults)
+  const DEFAULT_BANNER_CONFIG = {
+    title1: "ELEVATE YOUR CAR WITH",
+    title2: "CUSTOM ACCESSORIES",
+    subtitle: "Discover custom 7D floor mats, Nappa leatherette seat covers, app-controlled ambient lighting, 4K dual-lens dash cams, and off-road enhancements engineered to fit your exact vehicle model.",
+    ctaText: "EXPLORE BRANDS",
+    imageUrl: "https://images.unsplash.com/photo-1617788138017-80ad40651399?q=80&w=1920&auto=format&fit=crop",
+    imageUrlLight: "",
+  };
+
+  const [defaultBannerForm, setDefaultBannerForm] = useState(DEFAULT_BANNER_CONFIG);
+  const [defaultBannerPreviewTheme, setDefaultBannerPreviewTheme] = useState<"dark" | "light">("light");
+  const [uploadingDefaultBannerImage, setUploadingDefaultBannerImage] = useState(false);
+  const [uploadingDefaultBannerLightImage, setUploadingDefaultBannerLightImage] = useState(false);
+  const [defaultBannerSavedMsg, setDefaultBannerSavedMsg] = useState("");
+
   // -------------------------------------------------------------
   // Telegram CDN & Media Uploader States
   // -------------------------------------------------------------
@@ -1670,8 +1686,86 @@ Thank you for choosing Cars9 Studio!`;
         showAdmin: settings.footer_show_admin_link !== false,
       });
       setCustomLogoUrlInput(settings.site_logo_url || "");
+      setDefaultBannerForm({
+        title1: settings.default_banner_title1 || "ELEVATE YOUR CAR WITH",
+        title2: settings.default_banner_title2 || "CUSTOM ACCESSORIES",
+        subtitle: settings.default_banner_subtitle || "Discover custom 7D floor mats, Nappa leatherette seat covers, app-controlled ambient lighting, 4K dual-lens dash cams, and off-road enhancements engineered to fit your exact vehicle model.",
+        ctaText: settings.default_banner_cta || "EXPLORE BRANDS",
+        imageUrl: settings.default_banner_image || "https://images.unsplash.com/photo-1617788138017-80ad40651399?q=80&w=1920&auto=format&fit=crop",
+        imageUrlLight: settings.default_banner_image_light || "",
+      });
     }
   }, [settings]);
+
+  const handleSaveDefaultBanner = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const finalTitle1 = defaultBannerForm.title1.trim() || DEFAULT_BANNER_CONFIG.title1;
+      const finalTitle2 = defaultBannerForm.title2.trim() || DEFAULT_BANNER_CONFIG.title2;
+      const finalSubtitle = defaultBannerForm.subtitle.trim() || DEFAULT_BANNER_CONFIG.subtitle;
+      const finalCta = defaultBannerForm.ctaText.trim() || DEFAULT_BANNER_CONFIG.ctaText;
+      const finalImage = defaultBannerForm.imageUrl.trim() || DEFAULT_BANNER_CONFIG.imageUrl;
+      const finalImageLight = defaultBannerForm.imageUrlLight.trim();
+
+      await updateSetting("default_banner_title1", finalTitle1);
+      await updateSetting("default_banner_title2", finalTitle2);
+      await updateSetting("default_banner_subtitle", finalSubtitle);
+      await updateSetting("default_banner_cta", finalCta);
+      await updateSetting("default_banner_image", finalImage);
+      await updateSetting("default_banner_image_light", finalImageLight);
+
+      setDefaultBannerForm({
+        title1: finalTitle1,
+        title2: finalTitle2,
+        subtitle: finalSubtitle,
+        ctaText: finalCta,
+        imageUrl: finalImage,
+        imageUrlLight: finalImageLight,
+      });
+
+      setDefaultBannerSavedMsg("Default fallback banner saved successfully!");
+      showToastNotice("Default fallback banner saved successfully!", "success");
+      setTimeout(() => setDefaultBannerSavedMsg(""), 4000);
+    } catch (err: any) {
+      alert("Failed to save default banner: " + err.message);
+    }
+  };
+
+  const handleDefaultBannerImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingDefaultBannerImage(true);
+    try {
+      const url = await uploadFileToTelegram(file);
+      if (url) {
+        setDefaultBannerForm((prev) => ({ ...prev, imageUrl: url }));
+        showToastNotice("Default banner background uploaded! Click Save to apply.", "info");
+      }
+    } catch (err: any) {
+      alert("Upload failed: " + err.message);
+    } finally {
+      setUploadingDefaultBannerImage(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleDefaultBannerLightImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingDefaultBannerLightImage(true);
+    try {
+      const url = await uploadFileToTelegram(file);
+      if (url) {
+        setDefaultBannerForm((prev) => ({ ...prev, imageUrlLight: url }));
+        showToastNotice("Light mode banner background uploaded! Click Save to apply.", "info");
+      }
+    } catch (err: any) {
+      alert("Upload failed: " + err.message);
+    } finally {
+      setUploadingDefaultBannerLightImage(false);
+      e.target.value = "";
+    }
+  };
 
   const handleSiteLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -2789,6 +2883,244 @@ Thank you for choosing Cars9 Studio!`;
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* ================================================================= */}
+            {/* Fallback Default Banner (Active when no custom banners are ON)    */}
+            {/* ================================================================= */}
+            <div className={`${cardClass} border rounded-3xl p-6 sm:p-8 space-y-6 mt-8`}>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200 dark:border-slate-800">
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-amber-500" />
+                    <span>Default Page Banner (Fallback)</span>
+                  </h3>
+                  <p className="text-xs opacity-60 mt-0.5">
+                    Automatically displayed on the storefront when all individual hero banners are turned off or disabled.
+                  </p>
+                </div>
+                {defaultBannerSavedMsg && (
+                  <div className="px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 font-mono text-xs font-bold animate-in fade-in">
+                    ✓ {defaultBannerSavedMsg}
+                  </div>
+                )}
+              </div>
+
+              {/* Live Preview Card */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider font-mono opacity-70">
+                    Live Preview (Customer Storefront View):
+                  </span>
+                  <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-200/80 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 text-[11px] font-mono font-bold">
+                    <button
+                      type="button"
+                      onClick={() => setDefaultBannerPreviewTheme("light")}
+                      className={`px-2.5 py-1 rounded-lg transition flex items-center gap-1 ${
+                        defaultBannerPreviewTheme === "light"
+                          ? "bg-white text-slate-900 shadow-sm"
+                          : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                      }`}
+                    >
+                      <Sun className="w-3 h-3 text-amber-500" />
+                      <span>Light Mode</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDefaultBannerPreviewTheme("dark")}
+                      className={`px-2.5 py-1 rounded-lg transition flex items-center gap-1 ${
+                        defaultBannerPreviewTheme === "dark"
+                          ? "bg-slate-900 text-white shadow-sm"
+                          : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                      }`}
+                    >
+                      <Moon className="w-3 h-3 text-indigo-400" />
+                      <span>Dark Mode</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className={`relative w-full rounded-2xl overflow-hidden border aspect-21/9 min-h-[220px] flex items-center justify-center text-center p-6 shadow-xl transition-colors ${
+                  defaultBannerPreviewTheme === "light"
+                    ? "bg-slate-100 border-slate-200"
+                    : "bg-slate-950 border-slate-700/60"
+                }`}>
+                  {(defaultBannerPreviewTheme === "light" && defaultBannerForm.imageUrlLight
+                    ? defaultBannerForm.imageUrlLight
+                    : defaultBannerForm.imageUrl) && (
+                    <img
+                      src={getDisplayImageUrl(
+                        defaultBannerPreviewTheme === "light" && defaultBannerForm.imageUrlLight
+                          ? defaultBannerForm.imageUrlLight
+                          : defaultBannerForm.imageUrl
+                      )}
+                      alt="Banner Preview"
+                      className="absolute inset-0 w-full h-full object-cover object-center"
+                    />
+                  )}
+
+                  {defaultBannerPreviewTheme === "light" ? (
+                    <>
+                      <div className="absolute inset-0 bg-white/85 backdrop-blur-[0.5px]" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-white/95 via-white/55 to-white/85" />
+                      <div className="absolute inset-0 bg-gradient-to-r from-white/80 via-transparent to-white/80" />
+                    </>
+                  ) : (
+                    <>
+                      <div className="absolute inset-0 bg-black/75 backdrop-blur-[0.5px]" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-black/85" />
+                      <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-black/80" />
+                    </>
+                  )}
+                  
+                  <div className="relative z-10 max-w-xl mx-auto flex flex-col items-center">
+                    <h2 className={`text-base sm:text-2xl font-black uppercase tracking-tight leading-tight ${
+                      defaultBannerPreviewTheme === "light" ? "text-slate-900" : "text-white"
+                    }`}>
+                      <span>{defaultBannerForm.title1 || "ELEVATE YOUR CAR WITH"}</span>{" "}
+                      <span className={`block mt-1 ${
+                        defaultBannerPreviewTheme === "light" ? "text-red-600" : "text-amber-400"
+                      }`}>
+                        {defaultBannerForm.title2 || "CUSTOM ACCESSORIES"}
+                      </span>
+                    </h2>
+                    <p className={`text-[11px] sm:text-xs mt-2 line-clamp-2 max-w-md ${
+                      defaultBannerPreviewTheme === "light" ? "text-slate-600" : "text-slate-300"
+                    }`}>
+                      {defaultBannerForm.subtitle || "Discover custom 7D floor mats, Nappa leatherette seat covers..."}
+                    </p>
+                    <div className="mt-4 inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg">
+                      <span>{defaultBannerForm.ctaText || "EXPLORE BRANDS"}</span>
+                      <span>&rarr;</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Edit Form */}
+              <form onSubmit={handleSaveDefaultBanner} className="space-y-4 pt-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider font-mono opacity-80">
+                      Headline Title Line 1 (Primary Text)
+                    </label>
+                    <input
+                      type="text"
+                      value={defaultBannerForm.title1}
+                      onChange={(e) => setDefaultBannerForm({ ...defaultBannerForm, title1: e.target.value })}
+                      placeholder="e.g. ELEVATE YOUR CAR WITH"
+                      className={`w-full px-4 py-2.5 rounded-xl border text-xs font-mono ${inputClass}`}
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider font-mono opacity-80">
+                      Headline Highlight Line 2 (Accent Text)
+                    </label>
+                    <input
+                      type="text"
+                      value={defaultBannerForm.title2}
+                      onChange={(e) => setDefaultBannerForm({ ...defaultBannerForm, title2: e.target.value })}
+                      placeholder="e.g. CUSTOM ACCESSORIES"
+                      className={`w-full px-4 py-2.5 rounded-xl border text-xs font-mono text-amber-500 font-bold ${inputClass}`}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider font-mono opacity-80">
+                    Subtitle Description
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={defaultBannerForm.subtitle}
+                    onChange={(e) => setDefaultBannerForm({ ...defaultBannerForm, subtitle: e.target.value })}
+                    placeholder="Enter subtitle description..."
+                    className={`w-full px-4 py-2.5 rounded-xl border text-xs leading-relaxed ${inputClass}`}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider font-mono opacity-80">
+                    CTA Button Text
+                  </label>
+                  <input
+                    type="text"
+                    value={defaultBannerForm.ctaText}
+                    onChange={(e) => setDefaultBannerForm({ ...defaultBannerForm, ctaText: e.target.value })}
+                    placeholder="e.g. EXPLORE BRANDS"
+                    className={`w-full px-4 py-2.5 rounded-xl border text-xs font-mono uppercase ${inputClass}`}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Dark Mode Background Image */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold uppercase tracking-wider font-mono opacity-80 flex items-center gap-1.5">
+                        <Moon className="w-3.5 h-3.5 text-indigo-400" />
+                        <span>Background Image (Dark Mode / Default)</span>
+                      </label>
+                      <label className="cursor-pointer px-2 py-0.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-mono text-[10px] font-bold flex items-center gap-1 transition">
+                        <UploadCloud className="w-3 h-3" />
+                        <span>{uploadingDefaultBannerImage ? "..." : "Upload"}</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleDefaultBannerImageUpload}
+                          disabled={uploadingDefaultBannerImage}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                    <input
+                      type="text"
+                      value={defaultBannerForm.imageUrl}
+                      onChange={(e) => setDefaultBannerForm({ ...defaultBannerForm, imageUrl: e.target.value })}
+                      placeholder="https://... or /api/images/... dark mode image URL"
+                      className={`w-full px-4 py-2.5 rounded-xl border text-xs font-mono normal-case ${inputClass}`}
+                    />
+                  </div>
+
+                  {/* Light Mode Background Image */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold uppercase tracking-wider font-mono opacity-80 flex items-center gap-1.5">
+                        <Sun className="w-3.5 h-3.5 text-amber-500" />
+                        <span>Background Image (Light Mode - Optional)</span>
+                      </label>
+                      <label className="cursor-pointer px-2 py-0.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-mono text-[10px] font-bold flex items-center gap-1 transition">
+                        <UploadCloud className="w-3 h-3" />
+                        <span>{uploadingDefaultBannerLightImage ? "..." : "Upload"}</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleDefaultBannerLightImageUpload}
+                          disabled={uploadingDefaultBannerLightImage}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                    <input
+                      type="text"
+                      value={defaultBannerForm.imageUrlLight}
+                      onChange={(e) => setDefaultBannerForm({ ...defaultBannerForm, imageUrlLight: e.target.value })}
+                      placeholder="Optional. If empty, uses main image with clean light overlay"
+                      className={`w-full px-4 py-2.5 rounded-xl border text-xs font-mono normal-case ${inputClass}`}
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-2 flex justify-end">
+                  <button
+                    type="submit"
+                    className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs uppercase tracking-wider shadow-lg shadow-amber-500/20 transition active:scale-95 flex items-center gap-2"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>Save Default Banner</span>
+                  </button>
+                </div>
+              </form>
             </div>
 
             {/* Banner Edit Modal */}
@@ -5822,7 +6154,7 @@ Thank you for choosing Cars9 Studio!`;
                     <span>Google Maps Link (Store Locator Card & Footer)</span>
                   </label>
                   <input
-                    type="url"
+                    type="text"
                     value={footerForm.mapsUrl}
                     onChange={(e) => setFooterForm({ ...footerForm, mapsUrl: e.target.value })}
                     placeholder="https://maps.google.com/?q=... or https://maps.app.goo.gl/..."

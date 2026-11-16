@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { Cars9Logo } from "@/components/Cars9Logo";
+import { GoogleMapsLogo } from "@/components/GoogleMapsLogo";
 import { useSettings } from "@/context/SettingsContext";
 import { 
   ShieldCheck, 
@@ -162,8 +163,9 @@ export function Footer({ onSelectCategory }: FooterProps) {
                         href={mapsUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-[11px] font-mono text-red-600 dark:text-red-400 hover:text-red-500 font-semibold transition"
+                        className="inline-flex items-center gap-1.5 text-[11px] font-mono text-red-600 dark:text-red-400 hover:text-red-500 font-semibold transition"
                       >
+                        <GoogleMapsLogo className="w-3.5 h-3.5 shrink-0" />
                         <span>View on Google Maps</span>
                         <ExternalLink className="w-3 h-3" />
                       </a>
