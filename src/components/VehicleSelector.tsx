@@ -119,32 +119,38 @@ export function VehicleSelector({
   };
 
   return (
-    <div className="w-full relative z-20 -mt-6 sm:-mt-12 px-1.5 sm:px-4">
-      <div className="max-w-6xl mx-auto rounded-2xl sm:rounded-3xl p-3 sm:p-8 bg-white/95 dark:bg-[#0c1019]/95 backdrop-blur-2xl border border-slate-200/90 dark:border-slate-800 shadow-xl transition-all">
+    <div className="w-full relative z-20 -mt-6 sm:-mt-10 px-1.5 sm:px-4">
+      <div className="max-w-6xl mx-auto rounded-2xl sm:rounded-3xl p-3 sm:p-5 bg-white/95 dark:bg-[#0c1019]/95 backdrop-blur-2xl border border-slate-200/90 dark:border-slate-800 shadow-xl transition-all">
         
         {/* ================================================================= */}
         {/* VIEW 1: BRAND CARDS SELECTOR (Step 1)                            */}
         {/* ================================================================= */}
         {!isBrandSelected ? (
-          <div className="space-y-3.5 sm:space-y-6">
+          <div className="space-y-3 sm:space-y-4">
             
             {/* Header: Top Manufacturers / Select Car Brand */}
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-1.5 sm:gap-3 pb-2 sm:pb-3 border-b border-slate-100 dark:border-slate-800/80">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-1 sm:gap-2 pb-2 border-b border-slate-100 dark:border-slate-800/80">
               <div>
                 <span className="text-[10px] sm:text-[11px] font-mono font-bold tracking-widest text-amber-500 uppercase">
                   Top Manufacturers
                 </span>
-                <h2 className="text-base sm:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight mt-0.5">
+                <h2 className="text-base sm:text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight mt-0.5">
                   Select Car Brand
                 </h2>
               </div>
-              <div className="text-[11px] sm:text-xs font-mono text-slate-400">
+              <div className="text-[11px] font-mono text-slate-400">
                 Showing {brands.length} Brands
               </div>
             </div>
 
-            {/* Grid of Brand Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 sm:gap-5">
+            {/* Grid of Brand Cards (Balanced & Centered with Zero Waste Space) */}
+            <div className={`grid gap-2 sm:gap-3 ${
+              brands.length <= 2 
+                ? "grid-cols-2 max-w-sm sm:max-w-md mx-auto" 
+                : brands.length <= 4 
+                  ? "grid-cols-2 sm:grid-cols-4 max-w-3xl mx-auto" 
+                  : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6"
+            }`}>
               {brands.map((brand) => {
                 const isSelected = selectedBrand.toLowerCase() === brand.name.toLowerCase();
                 const logoUrl = getBrandLogoUrl(brand);
@@ -157,14 +163,14 @@ export function VehicleSelector({
                     onClick={() => {
                       onBrandChange(brand.name);
                     }}
-                    className={`rounded-xl sm:rounded-2xl p-2.5 sm:p-5 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 group ${
+                    className={`rounded-xl sm:rounded-2xl p-2 sm:p-3 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 group ${
                       isSelected
                         ? "bg-slate-900 dark:bg-[#121622] border-2 border-amber-400 ring-2 ring-amber-400/20 shadow-xl"
                         : "bg-slate-50/90 dark:bg-[#121622]/80 hover:bg-white dark:hover:bg-[#181d2c] border border-slate-200/90 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 shadow-xs hover:shadow-xl hover:-translate-y-0.5"
                     }`}
                   >
                     {/* White Square Container for Brand Logo */}
-                    <div className="w-12 h-12 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-white p-2 sm:p-3 flex items-center justify-center shadow-xs sm:shadow-md mb-2 sm:mb-3.5 group-hover:scale-105 transition-transform duration-300 overflow-hidden border border-slate-200/80">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-white p-1.5 sm:p-2.5 flex items-center justify-center shadow-xs sm:shadow-md mb-1.5 sm:mb-2 group-hover:scale-105 transition-transform duration-300 overflow-hidden border border-slate-200/80">
                       {logoUrl ? (
                         <img
                           src={logoUrl}
@@ -173,7 +179,7 @@ export function VehicleSelector({
                           loading="lazy"
                         />
                       ) : (
-                        <span className="text-sm sm:text-lg font-black text-slate-800 uppercase font-mono">
+                        <span className="text-sm sm:text-base font-black text-slate-800 uppercase font-mono">
                           {brand.name.slice(0, 3)}
                         </span>
                       )}
@@ -181,7 +187,7 @@ export function VehicleSelector({
 
                     {/* Brand Name */}
                     <h3
-                      className={`text-xs sm:text-base font-extrabold transition-colors ${
+                      className={`text-xs sm:text-sm font-extrabold transition-colors ${
                         isSelected
                           ? "text-amber-400"
                           : "text-slate-900 dark:text-white group-hover:text-amber-400"
@@ -191,7 +197,7 @@ export function VehicleSelector({
                     </h3>
 
                     {/* Subtitle: X Models • Y Items */}
-                    <span className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5 sm:mt-1">
+                    <span className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-mono mt-0.5">
                       {modelsCount} Models • {itemsCount} Items
                     </span>
                   </div>
@@ -204,10 +210,10 @@ export function VehicleSelector({
           /* =============================================================== */
           /* VIEW 2: MODEL CARDS SELECTOR (Step 2 - Reveals on Brand Click)  */
           /* =============================================================== */
-          <div className="space-y-3.5 sm:space-y-6">
+          <div className="space-y-3 sm:space-y-4">
             
             {/* Top Breadcrumb & Reset Action */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 pb-2 sm:pb-3 border-b border-slate-100 dark:border-slate-800/80">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2 pb-2 border-b border-slate-100 dark:border-slate-800/80">
               <div className="flex items-center gap-2 text-xs font-mono">
                 <button
                   onClick={() => onBrandChange("all")}
@@ -241,17 +247,21 @@ export function VehicleSelector({
 
             {/* Model Section Header */}
             <div>
-              <h2 className="text-base sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+              <h2 className="text-base sm:text-xl font-black text-slate-900 dark:text-white tracking-tight">
                 {currentBrandObj?.name} Models
               </h2>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-1">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Select your vehicle model to view custom-fit accessories.
               </p>
             </div>
 
             {/* Grid of Model Cards */}
             {availableModels.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
+              <div className={`grid gap-2.5 sm:gap-3.5 ${
+                availableModels.length <= 2 
+                  ? "grid-cols-2 max-w-lg mx-auto" 
+                  : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4"
+              }`}>
                 {availableModels.map((model) => {
                   const isSelected = selectedModel.toLowerCase() === model.name.toLowerCase();
                   const carImageUrl = getModelImageUrl(model);
@@ -267,10 +277,10 @@ export function VehicleSelector({
                         onModelChange(isSelected ? "all" : model.name);
                         scrollToCatalog();
                       }}
-                      className={`rounded-2xl overflow-hidden flex flex-col justify-between cursor-pointer transition-all duration-300 group ${
+                      className={`rounded-xl sm:rounded-2xl overflow-hidden flex flex-col justify-between cursor-pointer transition-all duration-300 group ${
                         isSelected
-                          ? "bg-slate-900 dark:bg-[#141824] border-2 border-amber-400 ring-2 ring-amber-400/20 shadow-2xl scale-[1.01]"
-                          : "bg-slate-50/90 dark:bg-[#121622] hover:bg-white dark:hover:bg-[#161b2a] border border-slate-200/90 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 shadow-xs hover:shadow-2xl hover:-translate-y-1"
+                          ? "bg-slate-900 dark:bg-[#141824] border-2 border-amber-400 ring-2 ring-amber-400/20 shadow-xl scale-[1.01]"
+                          : "bg-slate-50/90 dark:bg-[#121622] hover:bg-white dark:hover:bg-[#161b2a] border border-slate-200/90 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 shadow-xs hover:shadow-xl hover:-translate-y-0.5"
                       }`}
                     >
                       {/* Top Half: Car Photo */}
@@ -284,7 +294,7 @@ export function VehicleSelector({
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
                         
                         {isSelected && (
-                          <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-amber-400 text-black font-black text-[10px] font-mono flex items-center gap-1 shadow-lg">
+                          <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-amber-400 text-black font-black text-[9px] font-mono flex items-center gap-1 shadow-md">
                             <Check className="w-3 h-3 stroke-[3]" />
                             <span>SELECTED</span>
                           </div>
@@ -292,23 +302,23 @@ export function VehicleSelector({
                       </div>
 
                       {/* Middle: Model Name & Fitments Subtitle */}
-                      <div className="p-3 sm:p-4 flex-1 flex flex-col justify-center">
-                        <h3 className="text-xs sm:text-base font-extrabold text-slate-900 dark:text-white group-hover:text-amber-400 transition-colors">
+                      <div className="p-2 sm:p-3 flex-1 flex flex-col justify-center">
+                        <h3 className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white group-hover:text-amber-400 transition-colors">
                           {model.name}
                         </h3>
-                        <p className="text-[10px] sm:text-xs text-slate-400 font-mono mt-0.5 sm:mt-1 truncate">
+                        <p className="text-[10px] text-slate-400 font-mono mt-0.5 truncate">
                           {currentBrandObj?.name} {model.name} Fitments
                         </p>
                       </div>
 
                       {/* Bottom Footer Bar: X Accessories (Gold) & Explore -> */}
-                      <div className="px-3 sm:px-4 py-2 sm:py-3 border-t border-slate-200/80 dark:border-slate-800/80 bg-white/70 dark:bg-black/20 flex items-center justify-between text-[11px] sm:text-xs font-mono">
+                      <div className="px-2.5 sm:px-3 py-1.5 sm:py-2 border-t border-slate-200/80 dark:border-slate-800/80 bg-white/70 dark:bg-black/20 flex items-center justify-between text-[10px] sm:text-[11px] font-mono">
                         <span className="font-bold text-amber-500">
                           {accessoriesCount} Accessories
                         </span>
-                        <span className="font-semibold text-slate-500 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white flex items-center gap-1 group-hover:translate-x-1 transition-all">
+                        <span className="font-semibold text-slate-500 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white flex items-center gap-1 group-hover:translate-x-0.5 transition-all">
                           <span>Explore</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
+                          <ArrowRight className="w-3 h-3" />
                         </span>
                       </div>
                     </div>

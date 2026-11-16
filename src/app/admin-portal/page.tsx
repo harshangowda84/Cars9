@@ -285,6 +285,8 @@ export default function AdminPortalPage() {
   const [newAdminPassword, setNewAdminPassword] = useState("");
   const [newStaffPassword, setNewStaffPassword] = useState("");
   const [passwordSavedMsg, setPasswordSavedMsg] = useState("");
+  const [showCurrentAdminPass, setShowCurrentAdminPass] = useState(false);
+  const [showCurrentStaffPass, setShowCurrentStaffPass] = useState(false);
 
   // -------------------------------------------------------------
   // Branding & Footer Editor State
@@ -5898,12 +5900,28 @@ Thank you for choosing Cars9 Studio!`;
               
               {/* Master Admin Password */}
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-red-500" />
-                  <label className="text-xs font-bold uppercase tracking-wider font-mono">
-                    Master Admin Password (Current: {settings.admin_password || "cars9pass"})
-                  </label>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-red-500 shrink-0" />
+                    <label className="text-xs font-bold uppercase tracking-wider font-mono flex flex-wrap items-center gap-1.5">
+                      <span>Master Admin Password</span>
+                      <span className="text-[11px] text-slate-400 font-normal">
+                        (Current: {showCurrentAdminPass ? (settings.admin_password || "cars9pass") : "••••••••"})
+                      </span>
+                    </label>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentAdminPass(!showCurrentAdminPass)}
+                    className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition flex items-center gap-1 text-[11px] font-mono font-bold"
+                    title={showCurrentAdminPass ? "Hide Current Password" : "Show Current Password"}
+                  >
+                    {showCurrentAdminPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    <span>{showCurrentAdminPass ? "Hide" : "Show"}</span>
+                  </button>
                 </div>
+
                 <input
                   type="text"
                   placeholder="Enter new admin password..."
@@ -5918,12 +5936,28 @@ Thank you for choosing Cars9 Studio!`;
 
               {/* Staff Easy Access Password */}
               <div className="space-y-2 pt-4 border-t border-slate-200 dark:border-slate-800">
-                <div className="flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-emerald-500" />
-                  <label className="text-xs font-bold uppercase tracking-wider font-mono">
-                    Staff Easy Access Password (Current: {settings.staff_password || "cars9staff"})
-                  </label>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-emerald-500 shrink-0" />
+                    <label className="text-xs font-bold uppercase tracking-wider font-mono flex flex-wrap items-center gap-1.5">
+                      <span>Staff Easy Access Password</span>
+                      <span className="text-[11px] text-slate-400 font-normal">
+                        (Current: {showCurrentStaffPass ? (settings.staff_password || "cars9staff") : "••••••••"})
+                      </span>
+                    </label>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentStaffPass(!showCurrentStaffPass)}
+                    className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition flex items-center gap-1 text-[11px] font-mono font-bold"
+                    title={showCurrentStaffPass ? "Hide Current Password" : "Show Current Password"}
+                  >
+                    {showCurrentStaffPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    <span>{showCurrentStaffPass ? "Hide" : "Show"}</span>
+                  </button>
                 </div>
+
                 <input
                   type="text"
                   placeholder="Enter new staff quick-entry password..."

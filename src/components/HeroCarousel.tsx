@@ -59,7 +59,7 @@ export function HeroCarousel({ onExploreClick }: HeroCarouselProps) {
       onMouseLeave={() => setIsPaused(false)}
     >
       {/* Media Carousel */}
-      <div className="relative h-[300px] sm:h-[460px] lg:h-[540px] w-full">
+      <div className="relative h-[280px] sm:h-[380px] lg:h-[420px] w-full">
         {banners.map((b, idx) => (
           <div
             key={b.id || idx}

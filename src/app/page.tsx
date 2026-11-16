@@ -207,7 +207,7 @@ function HomeContent() {
       />
 
       {/* 2. Main Page Content Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-2.5 sm:px-6 lg:px-8 py-2.5 sm:py-6 space-y-4 sm:space-y-10 lg:space-y-12">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-2.5 sm:px-6 lg:px-8 py-2 sm:py-4 space-y-3 sm:space-y-5">
         {searchQuery.trim().length > 0 ? (
           /* ========================================================================= */
           /* DEDICATED SEARCH RESULTS PAGE VIEW */
@@ -368,48 +368,48 @@ function HomeContent() {
             </div>
 
             {/* Studio Engineering Highlights Badges */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 pt-1 sm:pt-6">
-              <div className="p-2.5 sm:p-5 rounded-2xl sm:rounded-3xl bg-white dark:bg-[#0f1523] border border-slate-200/80 dark:border-slate-800 shadow-xs sm:shadow-sm flex items-center gap-2.5 sm:gap-3.5">
-                <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-red-500/10 text-red-600 dark:text-red-500 flex items-center justify-center shrink-0">
-                  <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5" />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 pt-0 sm:pt-1">
+              <div className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white dark:bg-[#0f1523] border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-2 sm:gap-2.5">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-red-500/10 text-red-600 dark:text-red-500 flex items-center justify-center shrink-0">
+                  <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </div>
                 <div className="min-w-0">
                   <span className="block text-[11px] sm:text-xs font-extrabold text-slate-900 dark:text-white truncate">Zero Wire Slicing</span>
-                  <span className="text-[9px] sm:text-[11px] text-slate-400 font-mono truncate block">100% OEM Couplers</span>
+                  <span className="text-[9px] sm:text-[10px] text-slate-400 font-mono truncate block">100% OEM Couplers</span>
                 </div>
               </div>
 
               <Link
                 href="/warranty"
-                className="p-2.5 sm:p-5 rounded-2xl sm:rounded-3xl bg-white dark:bg-[#0f1523] border border-slate-200/80 dark:border-slate-800 shadow-xs sm:shadow-sm flex items-center gap-2.5 sm:gap-3.5 hover:border-emerald-500/50 transition group"
+                className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white dark:bg-[#0f1523] border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-2 sm:gap-2.5 hover:border-emerald-500/50 transition group"
                 title="Check Digital Warranty Certificate"
               >
-                <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                  <Award className="w-4 h-4 sm:w-5 sm:h-5" />
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </div>
                 <div className="min-w-0">
                   <span className="block text-[11px] sm:text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-500 transition-colors truncate">Warranty Protected</span>
-                  <span className="text-[9px] sm:text-[11px] text-slate-400 font-mono truncate block">Verify Certificate →</span>
+                  <span className="text-[9px] sm:text-[10px] text-slate-400 font-mono truncate block">Verify Certificate →</span>
                 </div>
               </Link>
 
-              <div className="p-2.5 sm:p-5 rounded-2xl sm:rounded-3xl bg-white dark:bg-[#0f1523] border border-slate-200/80 dark:border-slate-800 shadow-xs sm:shadow-sm flex items-center gap-2.5 sm:gap-3.5">
-                <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-                  <Volume2 className="w-4 h-4 sm:w-5 sm:h-5" />
+              <div className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white dark:bg-[#0f1523] border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-2 sm:gap-2.5">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                  <Volume2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </div>
                 <div className="min-w-0">
                   <span className="block text-[11px] sm:text-xs font-extrabold text-slate-900 dark:text-white truncate">Acoustic Tuning</span>
-                  <span className="text-[9px] sm:text-[11px] text-slate-400 font-mono truncate block">31-Band DSP</span>
+                  <span className="text-[9px] sm:text-[10px] text-slate-400 font-mono truncate block">31-Band DSP</span>
                 </div>
               </div>
 
-              <div className="p-2.5 sm:p-5 rounded-2xl sm:rounded-3xl bg-white dark:bg-[#0f1523] border border-slate-200/80 dark:border-slate-800 shadow-xs sm:shadow-sm flex items-center gap-2.5 sm:gap-3.5">
-                <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-                  <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
+              <div className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white dark:bg-[#0f1523] border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-2 sm:gap-2.5">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                  <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </div>
                 <div className="min-w-0">
                   <span className="block text-[11px] sm:text-xs font-extrabold text-slate-900 dark:text-white truncate">Studio Bay Slot</span>
-                  <span className="text-[9px] sm:text-[11px] text-slate-400 font-mono truncate block">Certified Techs</span>
+                  <span className="text-[9px] sm:text-[10px] text-slate-400 font-mono truncate block">Certified Techs</span>
                 </div>
               </div>
             </div>

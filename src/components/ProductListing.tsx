@@ -46,11 +46,11 @@ export function ProductListing({
   const { settings } = useSettings();
 
   return (
-    <section id="catalog" className={`w-full ${hideHeader ? "pt-1 pb-10 sm:pb-16" : "pt-4 sm:pt-10 pb-10 sm:pb-16"}`}>
+    <section id="catalog" className={`w-full ${hideHeader ? "pt-1 pb-6" : "pt-2 sm:pt-4 pb-8 sm:pb-12"}`}>
       
       {/* Category Navigation Pills & Header */}
       {!hideHeader && (
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 sm:gap-5 mb-4 sm:mb-8 pb-2.5 sm:pb-4 border-b border-slate-200/80 dark:border-slate-800/80">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-2.5 sm:gap-4 mb-3 sm:mb-5 pb-2 sm:pb-3 border-b border-slate-200/80 dark:border-slate-800/80">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-[10px] font-mono font-bold tracking-widest text-red-600 dark:text-red-400 uppercase">
