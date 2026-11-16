@@ -267,6 +267,7 @@ export default function AdminPortalPage() {
   const [selectedEnquiry, setSelectedEnquiry] = useState<QuotationRecord | null>(null);
   const [pricingItems, setPricingItems] = useState<any[]>([]);
   const [quoteDiscount, setQuoteDiscount] = useState<number>(0);
+  const [customInstallationCharge, setCustomInstallationCharge] = useState<number | null>(null);
   const [isGstEnabled, setIsGstEnabled] = useState<boolean>(true);
   const [customGstRate, setCustomGstRate] = useState<number>(18);
   const [showPrintQuoteModal, setShowPrintQuoteModal] = useState<boolean>(false);
@@ -1659,6 +1660,7 @@ export default function AdminPortalPage() {
 
     setPricingItems(initItems);
     setQuoteDiscount(enquiry.discountAmount || 0);
+    setCustomInstallationCharge(enquiry.installationTotal !== undefined ? Number(enquiry.installationTotal) : null);
     setIsGstEnabled(enquiry.isGstEnabled !== undefined ? Boolean(enquiry.isGstEnabled) : true);
     setCustomGstRate(enquiry.customGstRate !== undefined ? Number(enquiry.customGstRate) : 18);
 
@@ -1674,10 +1676,11 @@ export default function AdminPortalPage() {
     return pricingItems.reduce((sum, item) => sum + (Number(item.unitPrice) || 0) * (Number(item.quantity) || 1), 0);
   }, [pricingItems]);
 
-  const quoteInstallationTotal = useMemo(() => {
+  const itemsInstallationSum = useMemo(() => {
     return pricingItems.reduce((sum, item) => sum + (Number(item.installationCharge ?? item.laborCharge) || 0), 0);
   }, [pricingItems]);
 
+  const quoteInstallationTotal = customInstallationCharge !== null ? customInstallationCharge : itemsInstallationSum;
   const quoteLaborTotal = quoteInstallationTotal;
 
   const quoteTaxable = Math.max(0, quoteSubtotal + quoteInstallationTotal - (Number(quoteDiscount) || 0));
@@ -1781,6 +1784,237 @@ Thank you for choosing Cars9 Studio!`;
     navigator.clipboard.writeText(quoteUrl);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
+  };
+
+  const handlePrintQuotation = () => {
+    if (!selectedEnquiry) return;
+
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const configuredLogo = settings?.site_logo_url?.trim();
+    const logoUrl = configuredLogo
+      ? (configuredLogo.startsWith("http") ? configuredLogo : `${origin}${configuredLogo.startsWith("/") ? "" : "/"}${configuredLogo}`)
+      : `${origin}/images/cars9-logo.png`;
+
+    const quotePhone = settings.whatsapp_dispatch_phone || settings.whatsapp_master_phone || settings.footer_phone || "+91 90000 00000";
+    const quoteEmail = settings.footer_email || "support@cars9.com";
+    const quoteDate = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+
+    const itemsRows = pricingItems.map((item, idx) => {
+      const unitP = Number(item.unitPrice) || 0;
+      const qty = Number(item.quantity) || 1;
+      const installP = Number(item.installationCharge ?? item.laborCharge) || 0;
+      const lineTotal = (unitP * qty) + installP;
+
+      return `
+        <tr>
+          <td style="padding: 9px 12px; border-bottom: 1px solid #e2e8f0; font-family: monospace; color: #64748b; font-size: 11px;">${idx + 1}</td>
+          <td style="padding: 9px 12px; border-bottom: 1px solid #e2e8f0;">
+            <div style="font-weight: 700; color: #0f172a; font-size: 12px;">${item.name || "Accessory Component"}</div>
+            ${item.sku ? `<div style="font-family: monospace; font-size: 10px; color: #64748b; margin-top: 2px;">SKU: ${item.sku}</div>` : ""}
+          </td>
+          <td style="padding: 9px 12px; border-bottom: 1px solid #e2e8f0; text-align: center; font-family: monospace; font-weight: 700; font-size: 12px;">${qty}</td>
+          <td style="padding: 9px 12px; border-bottom: 1px solid #e2e8f0; text-align: right; font-family: monospace; font-size: 12px;">₹${unitP.toLocaleString("en-IN")}</td>
+          <td style="padding: 9px 12px; border-bottom: 1px solid #e2e8f0; text-align: right; font-family: monospace; font-size: 12px;">₹${installP.toLocaleString("en-IN")}</td>
+          <td style="padding: 9px 12px; border-bottom: 1px solid #e2e8f0; text-align: right; font-family: monospace; font-weight: 700; color: #0f172a; font-size: 12px;">₹${lineTotal.toLocaleString("en-IN")}</td>
+        </tr>
+      `;
+    }).join("");
+
+    const discountRow = Number(quoteDiscount) > 0 ? `
+      <div style="display: flex; justify-content: space-between; color: #059669; font-weight: 700; margin-bottom: 6px;">
+        <span>Studio Discount:</span>
+        <span>-₹${Number(quoteDiscount).toLocaleString("en-IN")}</span>
+      </div>
+    ` : "";
+
+    const gstRow = isGstEnabled ? `
+      <div style="display: flex; justify-content: space-between; color: #475569; margin-bottom: 6px;">
+        <span>GST (${customGstRate}%):</span>
+        <span style="font-weight: 700; color: #0f172a;">₹${quoteGst.toLocaleString("en-IN")}</span>
+      </div>
+    ` : `
+      <div style="display: flex; justify-content: space-between; color: #475569; margin-bottom: 6px;">
+        <span>GST:</span>
+        <span style="font-weight: 700; color: #d97706;">Exempted / 0%</span>
+      </div>
+    `;
+
+    const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Cars9 Quotation - ${selectedEnquiry.id}</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 12mm 15mm;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: #0f172a;
+      background: #ffffff;
+      font-size: 12px;
+      line-height: 1.45;
+      padding: 0;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th {
+      background-color: #f1f5f9;
+      color: #334155;
+      font-family: monospace;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 8px 12px;
+      border-bottom: 2px solid #cbd5e1;
+    }
+  </style>
+</head>
+<body>
+  <div style="max-width: 780px; margin: 0 auto; background: #ffffff;">
+    <!-- Studio Header with Official Logo -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #e2e8f0; padding-bottom: 14px; margin-bottom: 18px;">
+      <div>
+        <img src="${logoUrl}" alt="Cars9 Logo" style="height: 48px; max-width: 220px; object-fit: contain; display: block; margin-bottom: 6px;" onerror="this.onerror=null; this.src='${origin}/images/cars9-logo.png';" />
+        <div style="font-size: 13px; font-weight: 800; color: #dc2626; letter-spacing: -0.3px;">CARS9 BESPOKE AUTOMOTIVE STUDIO</div>
+        <div style="font-size: 11px; color: #475569;">Premium OEM-Grade Accessories & Acoustic Architecture</div>
+        <div style="font-size: 10px; font-family: monospace; color: #64748b; margin-top: 3px;">
+          Phone: ${quotePhone} • Email: ${quoteEmail}
+        </div>
+      </div>
+
+      <div style="text-align: right; font-family: monospace;">
+        <div style="font-size: 15px; font-weight: 900; color: #0f172a; letter-spacing: 0.5px;">OFFICIAL ESTIMATE</div>
+        <div style="font-size: 12px; color: #334155; margin-top: 3px;">
+          Ref ID: <strong style="color: #dc2626;">${selectedEnquiry.id}</strong>
+        </div>
+        <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
+          Date: <strong>${quoteDate}</strong>
+        </div>
+        <div style="display: inline-block; margin-top: 5px; padding: 2px 8px; border-radius: 4px; background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; font-size: 10px; font-weight: 700;">
+          PRICED ESTIMATE
+        </div>
+      </div>
+    </div>
+
+    <!-- Customer & Vehicle Info -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; margin-bottom: 18px;">
+      <div>
+        <div style="font-size: 10px; font-family: monospace; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 3px;">Customer Information</div>
+        <div style="font-size: 13px; font-weight: 700; color: #0f172a;">${selectedEnquiry.customerName || "Customer"}</div>
+        <div style="font-size: 11px; font-family: monospace; color: #475569; margin-top: 2px;">Phone: ${selectedEnquiry.customerPhone || "N/A"}</div>
+        ${selectedEnquiry.customerEmail ? `<div style="font-size: 11px; font-family: monospace; color: #475569;">Email: ${selectedEnquiry.customerEmail}</div>` : ""}
+      </div>
+
+      <div>
+        <div style="font-size: 10px; font-family: monospace; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 3px;">Vehicle Fitment Details</div>
+        <div style="font-size: 13px; font-weight: 700; color: #0f172a;">${selectedEnquiry.vehicleBrand || ""} ${selectedEnquiry.vehicleModel || ""}</div>
+        <div style="font-size: 11px; font-family: monospace; color: #475569; margin-top: 2px;">Model Year: ${selectedEnquiry.vehicleYear || "All Compatible Years"}</div>
+        <div style="font-size: 10px; font-family: monospace; color: #059669; font-weight: 600; margin-top: 2px;">✓ Coupler-to-Coupler OEM Wiring Guaranteed</div>
+      </div>
+    </div>
+
+    <!-- Table of Accessories -->
+    <div style="border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; margin-bottom: 18px;">
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align: left; width: 35px;">#</th>
+            <th style="text-align: left;">Component / Accessory</th>
+            <th style="text-align: center; width: 50px;">Qty</th>
+            <th style="text-align: right; width: 95px;">Unit Price</th>
+            <th style="text-align: right; width: 100px;">Installation</th>
+            <th style="text-align: right; width: 105px;">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${itemsRows}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Financial Breakdown -->
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+      <div style="width: 320px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; font-family: monospace; font-size: 11px;">
+        <div style="display: flex; justify-content: space-between; color: #475569; margin-bottom: 5px;">
+          <span>Components Subtotal:</span>
+          <span style="font-weight: 700; color: #0f172a;">₹${quoteSubtotal.toLocaleString("en-IN")}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; color: #475569; margin-bottom: 5px;">
+          <span>Installation Charges:</span>
+          <span style="font-weight: 700; color: #0f172a;">₹${quoteInstallationTotal.toLocaleString("en-IN")}</span>
+        </div>
+        ${discountRow}
+        ${gstRow}
+        <div style="display: flex; justify-content: space-between; border-top: 2px solid #cbd5e1; padding-top: 7px; margin-top: 7px; font-size: 14px; font-weight: 900; color: #0f172a;">
+          <span>GRAND TOTAL:</span>
+          <span style="color: #dc2626;">₹${quoteGrandTotal.toLocaleString("en-IN")}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Studio Terms & Warranty Assurance -->
+    <div style="border-top: 1px solid #e2e8f0; padding-top: 12px; margin-bottom: 20px;">
+      <div style="font-size: 11px; font-weight: 700; color: #334155; margin-bottom: 3px;">Studio Guarantee & Installation Terms:</div>
+      <ul style="font-size: 10px; color: #64748b; padding-left: 16px; line-height: 1.55;">
+        <li>OEM wiring integrity preserved with dedicated coupler-to-coupler harness connectors (Zero Wire Cut Warranty).</li>
+        <li>Official digital studio warranty certificate registered upon vehicle bay delivery.</li>
+        <li>Estimate valid for 15 days from issuance date. Bay slots subject to advance reservation.</li>
+      </ul>
+    </div>
+
+    <!-- Signature Blocks -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; padding-top: 14px; border-top: 1px solid #e2e8f0;">
+      <div style="width: 180px;">
+        <div style="border-bottom: 1px solid #cbd5e1; height: 32px; margin-bottom: 5px;"></div>
+        <div style="font-size: 10px; font-family: monospace; color: #64748b;">Customer Acceptance Signature</div>
+      </div>
+
+      <div style="width: 200px; text-align: right;">
+        <div style="border-bottom: 1px solid #cbd5e1; height: 32px; margin-bottom: 5px;"></div>
+        <div style="font-size: 10px; font-family: monospace; color: #64748b;">Authorized Signatory • Cars9 Studio</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+    let iframe = document.getElementById("quote-print-iframe") as HTMLIFrameElement;
+    if (!iframe) {
+      iframe = document.createElement("iframe");
+      iframe.id = "quote-print-iframe";
+      iframe.style.position = "fixed";
+      iframe.style.right = "0";
+      iframe.style.bottom = "0";
+      iframe.style.width = "0";
+      iframe.style.height = "0";
+      iframe.style.border = "0";
+      iframe.style.visibility = "hidden";
+      document.body.appendChild(iframe);
+    }
+
+    const frameDoc = iframe.contentWindow?.document;
+    if (!frameDoc) return;
+
+    frameDoc.open();
+    frameDoc.write(htmlContent);
+    frameDoc.close();
+
+    // Trigger print preview without blank pages
+    setTimeout(() => {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+    }, 250);
   };
 
   // =========================================================================
@@ -4627,9 +4861,27 @@ Thank you for choosing Cars9 Studio!`;
                         <span>Components Subtotal:</span>
                         <span className="font-bold">₹{quoteSubtotal.toLocaleString("en-IN")}</span>
                       </div>
-                      <div className="flex justify-between opacity-80">
-                        <span>Total Installation Charges:</span>
-                        <span className="font-bold">₹{quoteInstallationTotal.toLocaleString("en-IN")}</span>
+                      <div className="flex items-center justify-between pt-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className="opacity-80">Installation Charges (₹):</span>
+                          {customInstallationCharge !== null && (
+                            <button
+                              type="button"
+                              onClick={() => setCustomInstallationCharge(null)}
+                              className="text-[9px] font-mono text-blue-500 hover:underline cursor-pointer"
+                              title={`Reset to component sum (₹${itemsInstallationSum.toLocaleString("en-IN")})`}
+                            >
+                              (Reset Auto)
+                            </button>
+                          )}
+                        </div>
+                        <input
+                          type="number"
+                          value={quoteInstallationTotal}
+                          onChange={(e) => setCustomInstallationCharge(Math.max(0, Number(e.target.value)))}
+                          className={`w-32 px-2.5 py-1 rounded-lg border text-right text-xs font-bold ${inputClass}`}
+                          title="Enter custom total installation charges or set per-item charges above"
+                        />
                       </div>
 
                       <div className="flex items-center justify-between pt-1">
@@ -7618,7 +7870,7 @@ Thank you for choosing Cars9 Studio!`;
                 <div className="flex items-center gap-2.5">
                   <button
                     type="button"
-                    onClick={() => window.print()}
+                    onClick={handlePrintQuotation}
                     className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md transition active:scale-95 cursor-pointer"
                   >
                     <Printer className="w-3.5 h-3.5" />
@@ -7640,14 +7892,16 @@ Thank you for choosing Cars9 Studio!`;
                 id="quotation-print-sheet"
                 className="bg-white text-slate-900 rounded-2xl shadow-2xl border border-slate-200 p-8 space-y-6 font-sans"
               >
-                {/* Header */}
+                {/* Header with Official Studio Logo */}
                 <div className="flex items-start justify-between border-b border-slate-200 pb-5">
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl font-black tracking-tight text-red-600">CARS9</span>
-                      <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-slate-900 text-white">
-                        STUDIO
-                      </span>
+                    <img
+                      src={settings?.site_logo_url || "/images/cars9-logo.png"}
+                      alt="Cars9 Logo"
+                      className="h-12 w-auto object-contain mb-1.5 drop-shadow-sm"
+                    />
+                    <div className="text-xs font-black tracking-tight text-red-600 uppercase">
+                      CARS9 BESPOKE AUTOMOTIVE STUDIO
                     </div>
                     <p className="text-xs font-semibold text-slate-600">
                       Bespoke Automotive Architecture & Premium Fitments
