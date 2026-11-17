@@ -45,6 +45,23 @@ const defaultSettings: Record<string, any> = {
   // Car Brands Custom Homepage Display Order
   brand_order: [],
 
+  // Homepage Highlight Action Cards (Top 4 Cards)
+  home_card1_title: "Zero Wire Slicing",
+  home_card1_subtitle: "100% OEM Couplers",
+  home_card1_url: "",
+
+  home_card2_title: "Warranty Protected",
+  home_card2_subtitle: "Verify Certificate →",
+  home_card2_url: "/warranty",
+
+  home_card3_title: "WhatsApp Chat",
+  home_card3_subtitle: "Direct Chat →",
+  home_card3_url: "",
+
+  home_card4_title: "Store Locator",
+  home_card4_subtitle: "Google Maps →",
+  home_card4_url: "",
+
   // Fallback Default Hero Banner (Shown when no active banners)
   default_banner_title1: "ELEVATE YOUR CAR WITH",
   default_banner_title2: "CUSTOM ACCESSORIES",

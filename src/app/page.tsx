@@ -393,75 +393,227 @@ function HomeContent() {
               )}
             </div>
 
-            {/* Studio Engineering Highlights Badges */}
+            {/* Studio Engineering Highlights Badges / Action Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 pt-0 sm:pt-1">
-              <div className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white dark:bg-[#0f1523] border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-2 sm:gap-2.5">
-                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-red-500/10 text-red-600 dark:text-red-500 flex items-center justify-center shrink-0">
-                  <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                </div>
-                <div className="min-w-0">
-                  <span className="block text-[11px] sm:text-xs font-extrabold text-slate-900 dark:text-white truncate">Zero Wire Slicing</span>
-                  <span className="text-[9px] sm:text-[10px] text-slate-400 font-mono truncate block">100% OEM Couplers</span>
-                </div>
-              </div>
-
-              <Link
-                href="/warranty"
-                className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white dark:bg-[#0f1523] border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-2 sm:gap-2.5 hover:border-emerald-500/50 transition group"
-                title="Check Digital Warranty Certificate"
-              >
-                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                  <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                </div>
-                <div className="min-w-0">
-                  <span className="block text-[11px] sm:text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-500 transition-colors truncate">Warranty Protected</span>
-                  <span className="text-[9px] sm:text-[10px] text-slate-400 font-mono truncate block">Verify Certificate →</span>
-                </div>
-              </Link>
-
+              
+              {/* Card 1: Zero Wire Slicing / Custom Highlight */}
               {(() => {
-                const cardWhatsappNumber = (settings.whatsapp_card_phone || settings.whatsapp_master_phone || settings.footer_phone || "919000000000").replace(/\D/g, "");
-                return (
+                const card1Title = settings.home_card1_title || "Zero Wire Slicing";
+                const card1Sub = settings.home_card1_subtitle || "100% OEM Couplers";
+                const card1Url = settings.home_card1_url?.trim();
+                const isExternal = Boolean(card1Url && card1Url.startsWith("http"));
+
+                const cardContent = (
+                  <>
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-red-500/10 text-red-600 dark:text-red-500 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <span className="block text-[11px] sm:text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors truncate">
+                        {card1Title}
+                      </span>
+                      <span className="text-[9px] sm:text-[10px] text-slate-400 font-mono truncate block">
+                        {card1Sub}
+                      </span>
+                    </div>
+                  </>
+                );
+
+                if (!card1Url) {
+                  return (
+                    <div className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white dark:bg-[#0f1523] border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-2 sm:gap-2.5">
+                      {cardContent}
+                    </div>
+                  );
+                }
+
+                return isExternal ? (
                   <a
-                    href={`https://wa.me/${cardWhatsappNumber}?text=${encodeURIComponent("Hello Cars9 Studio! I am interested in custom accessories and fitment consultation.")}`}
+                    href={card1Url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white dark:bg-[#0f1523] border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-2 sm:gap-2.5 hover:border-emerald-500/50 hover:bg-emerald-50/20 dark:hover:bg-emerald-950/20 transition group cursor-pointer"
-                    title="Chat Directly with Studio on WhatsApp"
+                    className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white dark:bg-[#0f1523] border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-2 sm:gap-2.5 hover:border-red-500/50 transition group cursor-pointer"
+                    title={card1Title}
                   >
+                    {cardContent}
+                  </a>
+                ) : (
+                  <Link
+                    href={card1Url}
+                    className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white dark:bg-[#0f1523] border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-2 sm:gap-2.5 hover:border-red-500/50 transition group cursor-pointer"
+                    title={card1Title}
+                  >
+                    {cardContent}
+                  </Link>
+                );
+              })()}
+
+              {/* Card 2: Warranty Protected / Custom Feature */}
+              {(() => {
+                const card2Title = settings.home_card2_title || "Warranty Protected";
+                const card2Sub = settings.home_card2_subtitle || "Verify Certificate →";
+                const card2Url = settings.home_card2_url !== undefined && settings.home_card2_url !== "" 
+                  ? settings.home_card2_url.trim() 
+                  : "/warranty";
+                const isExternal = Boolean(card2Url && card2Url.startsWith("http"));
+
+                const cardContent = (
+                  <>
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <Award className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <span className="block text-[11px] sm:text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-500 transition-colors truncate">
+                        {card2Title}
+                      </span>
+                      <span className="text-[9px] sm:text-[10px] text-slate-400 font-mono truncate block">
+                        {card2Sub}
+                      </span>
+                    </div>
+                  </>
+                );
+
+                if (!card2Url) {
+                  return (
+                    <div className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white dark:bg-[#0f1523] border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-2 sm:gap-2.5">
+                      {cardContent}
+                    </div>
+                  );
+                }
+
+                return isExternal ? (
+                  <a
+                    href={card2Url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white dark:bg-[#0f1523] border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-2 sm:gap-2.5 hover:border-emerald-500/50 transition group cursor-pointer"
+                    title={card2Title}
+                  >
+                    {cardContent}
+                  </a>
+                ) : (
+                  <Link
+                    href={card2Url}
+                    className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white dark:bg-[#0f1523] border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-2 sm:gap-2.5 hover:border-emerald-500/50 transition group cursor-pointer"
+                    title={card2Title}
+                  >
+                    {cardContent}
+                  </Link>
+                );
+              })()}
+
+              {/* Card 3: WhatsApp Chat (Renamed to easy name & dynamic URL) */}
+              {(() => {
+                const card3Title = settings.home_card3_title || "WhatsApp Chat";
+                const card3Sub = settings.home_card3_subtitle || "Direct Chat →";
+                const cardWhatsappNumber = (settings.whatsapp_card_phone || settings.whatsapp_master_phone || settings.footer_phone || "919000000000").replace(/\D/g, "");
+                const defaultWaUrl = `https://wa.me/${cardWhatsappNumber}?text=${encodeURIComponent("Hello Cars9 Studio! I am interested in custom accessories and fitment consultation.")}`;
+                const card3Url = settings.home_card3_url?.trim() || defaultWaUrl;
+                const isExternal = Boolean(card3Url && card3Url.startsWith("http"));
+
+                const cardContent = (
+                  <>
                     <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-[#25D366]/15 text-[#25D366] flex items-center justify-center shrink-0 group-hover:bg-[#25D366] group-hover:text-white transition-colors">
                       <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current" viewBox="0 0 24 24">
                         <path d="M12.031 2C6.495 2 2 6.494 2 12.03c0 1.97.57 3.81 1.554 5.37L2 22l4.77-1.523A9.975 9.975 0 0 0 12.031 22c5.535 0 10.03-4.494 10.03-10.03C22.062 6.494 17.566 2 12.031 2zm5.82 14.28c-.24.67-1.39 1.28-1.92 1.34-.49.06-1.12.08-3.6-1.02-2.98-1.32-4.88-4.37-5.03-4.57-.15-.2-1.2-1.6-1.2-3.05 0-1.45.75-2.16 1.02-2.45.27-.29.59-.36.79-.36.2 0 .4 0 .58.01.19.01.44-.07.69.52.26.61.88 2.14.96 2.3.08.15.13.34.02.54-.1.2-.16.32-.31.5-.15.18-.32.4-.46.54-.15.15-.31.32-.13.63.18.31.79 1.3 1.7 2.11 1.17 1.04 2.15 1.36 2.46 1.51.31.15.49.13.67-.08.18-.21.78-.91.99-1.22.21-.31.42-.26.71-.15.29.11 1.84.87 2.15 1.03.31.15.52.23.6.36.08.14.08.79-.16 1.46z" />
                       </svg>
                     </div>
                     <div className="min-w-0">
-                      <span className="block text-[11px] sm:text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-[#25D366] transition-colors truncate">WhatsApp Studio</span>
-                      <span className="text-[9px] sm:text-[10px] text-slate-400 font-mono truncate block">Direct Studio Chat &rarr;</span>
+                      <span className="block text-[11px] sm:text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-[#25D366] transition-colors truncate">
+                        {card3Title}
+                      </span>
+                      <span className="text-[9px] sm:text-[10px] text-slate-400 font-mono truncate block">
+                        {card3Sub}
+                      </span>
                     </div>
+                  </>
+                );
+
+                if (!card3Url) {
+                  return (
+                    <div className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white dark:bg-[#0f1523] border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-2 sm:gap-2.5">
+                      {cardContent}
+                    </div>
+                  );
+                }
+
+                return isExternal ? (
+                  <a
+                    href={card3Url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white dark:bg-[#0f1523] border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-2 sm:gap-2.5 hover:border-emerald-500/50 hover:bg-emerald-50/20 dark:hover:bg-emerald-950/20 transition group cursor-pointer"
+                    title={`Chat on ${card3Title}`}
+                  >
+                    {cardContent}
                   </a>
+                ) : (
+                  <Link
+                    href={card3Url}
+                    className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white dark:bg-[#0f1523] border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-2 sm:gap-2.5 hover:border-emerald-500/50 hover:bg-emerald-50/20 dark:hover:bg-emerald-950/20 transition group cursor-pointer"
+                    title={card3Title}
+                  >
+                    {cardContent}
+                  </Link>
                 );
               })()}
 
-              <a
-                href={settings.footer_maps_url || "https://maps.google.com/?q=Cars9+Automotive+Studio+Bangalore"}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white dark:bg-[#0f1523] border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-2 sm:gap-2.5 hover:border-red-500/40 transition group cursor-pointer"
-                title="Open Studio Location on Google Maps"
-              >
-                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform p-1.5 shadow-xs">
-                  <GoogleMapsLogo className="w-full h-full" />
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1">
-                    <span className="block text-[11px] sm:text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors truncate">
-                      Store Locator
-                    </span>
-                    <GoogleMapsLogo className="w-3 h-3 shrink-0" />
-                  </div>
-                  <span className="text-[9px] sm:text-[10px] text-slate-400 font-mono truncate block">Google Maps &rarr;</span>
-                </div>
-              </a>
+              {/* Card 4: Store Locator / Maps */}
+              {(() => {
+                const card4Title = settings.home_card4_title || "Store Locator";
+                const card4Sub = settings.home_card4_subtitle || "Google Maps →";
+                const defaultMapsUrl = settings.footer_maps_url || "https://maps.google.com/?q=Cars9+Automotive+Studio+Bangalore";
+                const card4Url = settings.home_card4_url?.trim() || defaultMapsUrl;
+                const isExternal = Boolean(card4Url && card4Url.startsWith("http"));
+
+                const cardContent = (
+                  <>
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform p-1.5 shadow-xs">
+                      <GoogleMapsLogo className="w-full h-full" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1">
+                        <span className="block text-[11px] sm:text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors truncate">
+                          {card4Title}
+                        </span>
+                        <GoogleMapsLogo className="w-3 h-3 shrink-0" />
+                      </div>
+                      <span className="text-[9px] sm:text-[10px] text-slate-400 font-mono truncate block">
+                        {card4Sub}
+                      </span>
+                    </div>
+                  </>
+                );
+
+                if (!card4Url) {
+                  return (
+                    <div className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white dark:bg-[#0f1523] border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-2 sm:gap-2.5">
+                      {cardContent}
+                    </div>
+                  );
+                }
+
+                return isExternal ? (
+                  <a
+                    href={card4Url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white dark:bg-[#0f1523] border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-2 sm:gap-2.5 hover:border-red-500/40 transition group cursor-pointer"
+                    title={card4Title}
+                  >
+                    {cardContent}
+                  </a>
+                ) : (
+                  <Link
+                    href={card4Url}
+                    className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-white dark:bg-[#0f1523] border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-2 sm:gap-2.5 hover:border-red-500/40 transition group cursor-pointer"
+                    title={card4Title}
+                  >
+                    {cardContent}
+                  </Link>
+                );
+              })()}
+
             </div>
 
             {/* Product Listing Page (PLP - Pictures Only, No Price) */}

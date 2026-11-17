@@ -393,7 +393,7 @@ Please share custom quotation, studio bay availability & installation schedule.`
                 <div className="p-3.5 rounded-2xl bg-white dark:bg-[#0f1523] border border-slate-200 dark:border-slate-800">
                   <span className="block text-[10px] text-slate-400 uppercase font-bold">Studio Warranty</span>
                   <span className="font-bold text-slate-900 dark:text-white text-xs">
-                    {product.warrantyMonths || 12} Months On-Site
+                    {product.specifications?.["Warranty"] ? `${product.specifications["Warranty"]} On-Site` : `${product.warrantyMonths || 12} Months On-Site`}
                   </span>
                 </div>
                 {settings.pdp_showBayTimeEstimate !== false && (

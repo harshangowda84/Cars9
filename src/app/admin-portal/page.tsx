@@ -235,6 +235,14 @@ export default function AdminPortalPage() {
   const [inlineBrandName, setInlineBrandName] = useState("");
   const [inlineNewModel, setInlineNewModel] = useState(false);
   const [inlineModelName, setInlineModelName] = useState("");
+  const [inlineNewCategory, setInlineNewCategory] = useState(false);
+  const [inlineCategoryName, setInlineCategoryName] = useState("");
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
+
+  // Custom Years in Product Modal
+  const [customYears, setCustomYears] = useState<string[]>([]);
+  const [newYearInput, setNewYearInput] = useState("");
+  const [showAddYearInput, setShowAddYearInput] = useState(false);
 
   const [productForm, setProductForm] = useState({
     name: "",
@@ -250,6 +258,8 @@ export default function AdminPortalPage() {
     videoUrl: "",
     compatibleYears: ["2024", "2023", "2022", "2021", "2020"],
     badge: "OEM Coupler",
+    warrantyValue: 12,
+    warrantyUnit: "months" as "days" | "months" | "years",
     warrantyMonths: 12,
     bayTime: "60–90 Mins Bay Time",
     whatsInBox: "1x Main Unit, 1x OEM Coupler Harness, 1x Studio Warranty Card",
@@ -340,6 +350,26 @@ export default function AdminPortalPage() {
   const [whatsappSavedMsg, setWhatsappSavedMsg] = useState("");
   const [whatsappAppliedMsg, setWhatsappAppliedMsg] = useState("");
   const [savingWhatsApp, setSavingWhatsApp] = useState(false);
+
+  // Homepage Highlight Cards State (Rename & Custom URL)
+  const [homeCard1Title, setHomeCard1Title] = useState(settings.home_card1_title || "Zero Wire Slicing");
+  const [homeCard1Sub, setHomeCard1Sub] = useState(settings.home_card1_subtitle || "100% OEM Couplers");
+  const [homeCard1Url, setHomeCard1Url] = useState(settings.home_card1_url || "");
+
+  const [homeCard2Title, setHomeCard2Title] = useState(settings.home_card2_title || "Warranty Protected");
+  const [homeCard2Sub, setHomeCard2Sub] = useState(settings.home_card2_subtitle || "Verify Certificate →");
+  const [homeCard2Url, setHomeCard2Url] = useState(settings.home_card2_url || "/warranty");
+
+  const [homeCard3Title, setHomeCard3Title] = useState(settings.home_card3_title || "WhatsApp Chat");
+  const [homeCard3Sub, setHomeCard3Sub] = useState(settings.home_card3_subtitle || "Direct Chat →");
+  const [homeCard3Url, setHomeCard3Url] = useState(settings.home_card3_url || "");
+
+  const [homeCard4Title, setHomeCard4Title] = useState(settings.home_card4_title || "Store Locator");
+  const [homeCard4Sub, setHomeCard4Sub] = useState(settings.home_card4_subtitle || "Google Maps →");
+  const [homeCard4Url, setHomeCard4Url] = useState(settings.home_card4_url || "");
+
+  const [savingHomeCards, setSavingHomeCards] = useState(false);
+  const [homeCardsSavedMsg, setHomeCardsSavedMsg] = useState("");
 
   // Default Fallback Banner Form State (Pre-populated defaults)
   const DEFAULT_BANNER_CONFIG = {
@@ -1145,18 +1175,70 @@ export default function AdminPortalPage() {
       .map((s: any) => (typeof s === "string" ? s : s.name));
   }, [brands, productForm.brand]);
 
+  const allAvailableYears = useMemo(() => {
+    const set = new Set<string>(COMMON_YEARS);
+    customYears.forEach((y) => set.add(y));
+    (productForm.compatibleYears || []).forEach((y) => set.add(y));
+    return Array.from(set).sort((a, b) => Number(b) - Number(a));
+  }, [customYears, productForm.compatibleYears]);
+
+  const handleAddCustomYear = () => {
+    const cleaned = newYearInput.trim();
+    if (!cleaned) return;
+    if (!customYears.includes(cleaned)) {
+      setCustomYears((prev) => [...prev, cleaned]);
+    }
+    if (!productForm.compatibleYears.includes(cleaned)) {
+      setProductForm((prev) => ({
+        ...prev,
+        compatibleYears: [...prev.compatibleYears, cleaned].sort((a, b) => Number(b) - Number(a)),
+      }));
+    }
+    setNewYearInput("");
+    setShowAddYearInput(false);
+    setToastNotice({ text: `Year "${cleaned}" added and selected!`, type: "success" });
+  };
+
+  const handleInlineSaveCategory = () => {
+    const trimmed = inlineCategoryName.trim();
+    if (!trimmed) return;
+    if (!customCategories.includes(trimmed)) {
+      setCustomCategories((prev) => [...prev, trimmed]);
+    }
+    setProductForm((prev) => ({ ...prev, category: trimmed }));
+    setInlineCategoryName("");
+    setInlineNewCategory(false);
+    setToastNotice({ text: `Category "${trimmed}" added!`, type: "success" });
+  };
+
+  const allCategoryOptions = useMemo(() => {
+    const DEFAULT_CATEGORIES = [
+      "Infotainment & Audio",
+      "Lighting & Electrical",
+      "Interior Styling",
+      "Exterior Styling",
+      "Car Care & Utility"
+    ];
+    const set = new Set<string>(DEFAULT_CATEGORIES);
+    products.forEach((p) => { if (p.category) set.add(p.category); });
+    recycleBin.forEach((p) => { if (p.category) set.add(p.category); });
+    customCategories.forEach((c) => set.add(c));
+    if (productForm.category) set.add(productForm.category);
+    return Array.from(set);
+  }, [products, recycleBin, customCategories, productForm.category]);
+
   const toggleYear = (yr: string) => {
     setProductForm((prev) => {
       const exists = prev.compatibleYears.includes(yr);
       const nextYears = exists
         ? prev.compatibleYears.filter((y) => y !== yr)
-        : [...prev.compatibleYears, yr].sort().reverse();
+        : [...prev.compatibleYears, yr].sort((a, b) => Number(b) - Number(a));
       return { ...prev, compatibleYears: nextYears };
     });
   };
 
   const handleSelectAllYears = () => {
-    setProductForm((prev) => ({ ...prev, compatibleYears: [...COMMON_YEARS] }));
+    setProductForm((prev) => ({ ...prev, compatibleYears: [...allAvailableYears] }));
   };
 
   const handleClearYears = () => {
@@ -1469,6 +1551,8 @@ export default function AdminPortalPage() {
       videoUrl: "",
       compatibleYears: ["2024", "2023", "2022", "2021", "2020"],
       badge: "OEM Coupler",
+      warrantyValue: 12,
+      warrantyUnit: "months" as "days" | "months" | "years",
       warrantyMonths: 12,
       bayTime: "60–90 Mins Bay Time",
       whatsInBox: "1x Main Unit, 1x OEM Coupler Harness, 1x Studio Warranty Card",
@@ -1481,6 +1565,8 @@ export default function AdminPortalPage() {
     });
     setInlineNewBrand(false);
     setInlineNewModel(false);
+    setInlineNewCategory(false);
+    setShowAddYearInput(false);
     setShowProductModal(true);
   };
 
@@ -1492,6 +1578,22 @@ export default function AdminPortalPage() {
     const yearList = Array.isArray(part.compatibleYears)
       ? part.compatibleYears
       : ["2024", "2023", "2022"];
+
+    let initialWarrantyVal = 12;
+    let initialWarrantyUnit: "days" | "months" | "years" = "months";
+
+    if (part.specifications?.["Warranty Value"] && part.specifications?.["Warranty Unit"]) {
+      initialWarrantyVal = Number(part.specifications["Warranty Value"]) || 1;
+      initialWarrantyUnit = part.specifications["Warranty Unit"] as "days" | "months" | "years";
+    } else if (part.warrantyMonths) {
+      if (part.warrantyMonths % 12 === 0 && part.warrantyMonths >= 12) {
+        initialWarrantyVal = part.warrantyMonths / 12;
+        initialWarrantyUnit = "years";
+      } else {
+        initialWarrantyVal = part.warrantyMonths;
+        initialWarrantyUnit = "months";
+      }
+    }
 
     setProductForm({
       name: part.name,
@@ -1507,13 +1609,15 @@ export default function AdminPortalPage() {
       videoUrl: part.videoUrl || "",
       compatibleYears: yearList,
       badge: part.badge || "OEM Coupler",
+      warrantyValue: initialWarrantyVal,
+      warrantyUnit: initialWarrantyUnit,
       warrantyMonths: part.warrantyMonths || 12,
       bayTime: part.specifications?.["Installation Slot"] || "60–90 Mins Bay Time",
       whatsInBox: part.specifications?.["In-The-Box"] || "1x Main Unit, 1x OEM Coupler Harness, 1x Studio Warranty Card",
       installationGuide: part.specifications?.["Installation Guide"] || "100% Plug-and-play coupler mating into factory sockets. Zero wire splicing required.",
       specs: part.specifications
         ? Object.entries(part.specifications)
-            .filter(([k]) => !["In-The-Box", "Installation Guide", "Installation Slot", "OEM Number", "Material", "Dimensions", "Weight"].includes(k))
+            .filter(([k]) => !["In-The-Box", "Installation Guide", "Installation Slot", "OEM Number", "Material", "Dimensions", "Weight", "Warranty", "Warranty Value", "Warranty Unit"].includes(k))
             .map(([k, v]) => `${k}: ${v}`)
             .join("\n")
         : "",
@@ -1524,6 +1628,8 @@ export default function AdminPortalPage() {
     });
     setInlineNewBrand(false);
     setInlineNewModel(false);
+    setInlineNewCategory(false);
+    setShowAddYearInput(false);
     setShowProductModal(true);
   };
 
@@ -1545,6 +1651,23 @@ export default function AdminPortalPage() {
       if (productForm.whatsInBox) specObj["In-The-Box"] = productForm.whatsInBox;
       if (productForm.installationGuide) specObj["Installation Guide"] = productForm.installationGuide;
 
+      let calculatedMonths = Number(productForm.warrantyValue) || 1;
+      if (productForm.warrantyUnit === "years") {
+        calculatedMonths = (Number(productForm.warrantyValue) || 1) * 12;
+      } else if (productForm.warrantyUnit === "days") {
+        calculatedMonths = Math.max(1, Math.round((Number(productForm.warrantyValue) || 30) / 30));
+      }
+
+      const warrantyUnitLabel = productForm.warrantyUnit === "days"
+        ? (Number(productForm.warrantyValue) === 1 ? "Day" : "Days")
+        : productForm.warrantyUnit === "years"
+        ? (Number(productForm.warrantyValue) === 1 ? "Year" : "Years")
+        : (Number(productForm.warrantyValue) === 1 ? "Month" : "Months");
+
+      specObj["Warranty"] = `${productForm.warrantyValue} ${warrantyUnitLabel}`;
+      specObj["Warranty Value"] = String(productForm.warrantyValue);
+      specObj["Warranty Unit"] = productForm.warrantyUnit;
+
       const validImages = productForm.images.filter((img) => img.trim().length > 0);
       const primaryImage = validImages[0] || "/images/placeholder.jpg";
 
@@ -1563,7 +1686,7 @@ export default function AdminPortalPage() {
         videoUrl: productForm.videoUrl.trim(),
         compatibleYears: productForm.compatibleYears,
         badge: productForm.badge,
-        warrantyMonths: Number(productForm.warrantyMonths),
+        warrantyMonths: calculatedMonths,
         specifications: specObj,
       };
 
@@ -2170,6 +2293,21 @@ Thank you for choosing Cars9 Studio!`;
         imageUrl: settings.default_banner_image || "https://images.unsplash.com/photo-1617788138017-80ad40651399?q=80&w=1920&auto=format&fit=crop",
         imageUrlLight: settings.default_banner_image_light || "",
       });
+      setHomeCard1Title(settings.home_card1_title || "Zero Wire Slicing");
+      setHomeCard1Sub(settings.home_card1_subtitle || "100% OEM Couplers");
+      setHomeCard1Url(settings.home_card1_url || "");
+
+      setHomeCard2Title(settings.home_card2_title || "Warranty Protected");
+      setHomeCard2Sub(settings.home_card2_subtitle || "Verify Certificate →");
+      setHomeCard2Url(settings.home_card2_url !== undefined ? settings.home_card2_url : "/warranty");
+
+      setHomeCard3Title(settings.home_card3_title || "WhatsApp Chat");
+      setHomeCard3Sub(settings.home_card3_subtitle || "Direct Chat →");
+      setHomeCard3Url(settings.home_card3_url || "");
+
+      setHomeCard4Title(settings.home_card4_title || "Store Locator");
+      setHomeCard4Sub(settings.home_card4_subtitle || "Google Maps →");
+      setHomeCard4Url(settings.home_card4_url || "");
     }
   }, [settings]);
 
@@ -2347,6 +2485,37 @@ Thank you for choosing Cars9 Studio!`;
       alert("Failed to save WhatsApp settings: " + err.message);
     } finally {
       setSavingWhatsApp(false);
+    }
+  };
+
+  const handleSaveHomeCards = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingHomeCards(true);
+    try {
+      await Promise.all([
+        updateSetting("home_card1_title", homeCard1Title.trim()),
+        updateSetting("home_card1_subtitle", homeCard1Sub.trim()),
+        updateSetting("home_card1_url", homeCard1Url.trim()),
+
+        updateSetting("home_card2_title", homeCard2Title.trim()),
+        updateSetting("home_card2_subtitle", homeCard2Sub.trim()),
+        updateSetting("home_card2_url", homeCard2Url.trim()),
+
+        updateSetting("home_card3_title", homeCard3Title.trim()),
+        updateSetting("home_card3_subtitle", homeCard3Sub.trim()),
+        updateSetting("home_card3_url", homeCard3Url.trim()),
+
+        updateSetting("home_card4_title", homeCard4Title.trim()),
+        updateSetting("home_card4_subtitle", homeCard4Sub.trim()),
+        updateSetting("home_card4_url", homeCard4Url.trim()),
+      ]);
+      setHomeCardsSavedMsg("Homepage feature cards updated successfully!");
+      showToastNotice("Homepage action cards saved successfully!", "success");
+      setTimeout(() => setHomeCardsSavedMsg(""), 4000);
+    } catch (err: any) {
+      alert("Failed to save homepage cards: " + err.message);
+    } finally {
+      setSavingHomeCards(false);
     }
   };
 
@@ -4457,9 +4626,9 @@ Thank you for choosing Cars9 Studio!`;
                         )}
                       </div>
 
-                      {/* Multi-Year Selection */}
+                      {/* Multi-Year Selection with [+ Add Year] */}
                       <div className="sm:col-span-2 space-y-2 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
                           <label className="font-bold opacity-80 text-xs">
                             Compatible Model Years (Multi-Select) *
                           </label>
@@ -4469,7 +4638,7 @@ Thank you for choosing Cars9 Studio!`;
                               onClick={handleSelectAllYears}
                               className="text-red-500 hover:underline font-bold"
                             >
-                              Select All (2016-2025)
+                              Select All
                             </button>
                             <span>•</span>
                             <button
@@ -4482,8 +4651,8 @@ Thank you for choosing Cars9 Studio!`;
                           </div>
                         </div>
 
-                        <div className="flex flex-wrap gap-1.5 pt-1">
-                          {COMMON_YEARS.map((yr) => {
+                        <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                          {allAvailableYears.map((yr) => {
                             const isSelected = productForm.compatibleYears.includes(yr);
                             return (
                               <button
@@ -4500,26 +4669,113 @@ Thank you for choosing Cars9 Studio!`;
                               </button>
                             );
                           })}
+
+                          {/* [+ Add Any Year] Inline Input */}
+                          {showAddYearInput ? (
+                            <div className="inline-flex items-center gap-1 p-0.5 rounded-xl border border-red-500/40 bg-red-500/5">
+                              <input
+                                type="text"
+                                placeholder="e.g. 2026"
+                                value={newYearInput}
+                                onChange={(e) => setNewYearInput(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    handleAddCustomYear();
+                                  }
+                                }}
+                                className={`w-20 px-2 py-0.5 rounded-lg border text-xs font-mono ${inputClass}`}
+                                autoFocus
+                              />
+                              <button
+                                type="button"
+                                onClick={handleAddCustomYear}
+                                className="px-2 py-0.5 rounded-lg bg-red-600 text-white text-[10px] font-bold"
+                              >
+                                Add
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setShowAddYearInput(false)}
+                                className="p-1 opacity-60 hover:opacity-100"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setShowAddYearInput(true)}
+                              className="px-2.5 py-1 rounded-xl text-xs font-mono font-bold border border-dashed border-red-500/60 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition flex items-center gap-1"
+                            >
+                              <Plus className="w-3 h-3" />
+                              <span>Add Year</span>
+                            </button>
+                          )}
                         </div>
                         <p className="text-[10px] opacity-50">
                           Selected: {productForm.compatibleYears.join(", ") || "None"}
                         </p>
                       </div>
 
-                      {/* Category */}
+                      {/* Category with [+ Add New Category] button */}
                       <div>
-                        <label className="block mb-1 opacity-70">Category *</label>
-                        <select
-                          value={productForm.category}
-                          onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
-                          className={`w-full px-3.5 py-2 rounded-xl border ${inputClass}`}
-                        >
-                          <option value="Infotainment & Audio">Infotainment & Audio</option>
-                          <option value="Lighting & Electrical">Lighting & Electrical</option>
-                          <option value="Interior Styling">Interior Styling</option>
-                          <option value="Exterior Styling">Exterior Styling</option>
-                          <option value="Car Care & Utility">Car Care & Utility</option>
-                        </select>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="opacity-70 font-bold">Category *</label>
+                          <button
+                            type="button"
+                            onClick={() => setInlineNewCategory(!inlineNewCategory)}
+                            className="text-[10px] text-red-600 dark:text-red-400 font-bold hover:underline flex items-center gap-0.5"
+                          >
+                            <Plus className="w-3 h-3" />
+                            <span>Add New Category</span>
+                          </button>
+                        </div>
+
+                        {inlineNewCategory ? (
+                          <div className="flex items-center gap-1.5 p-1.5 rounded-xl border border-red-500/30 bg-red-500/5">
+                            <input
+                              type="text"
+                              placeholder="New Category (e.g. Performance)..."
+                              value={inlineCategoryName}
+                              onChange={(e) => setInlineCategoryName(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  handleInlineSaveCategory();
+                                }
+                              }}
+                              className={`flex-1 px-2.5 py-1 rounded-lg border text-xs ${inputClass}`}
+                              autoFocus
+                            />
+                            <button
+                              type="button"
+                              onClick={handleInlineSaveCategory}
+                              className="px-2.5 py-1 rounded-lg bg-red-600 text-white text-[10px] font-bold"
+                            >
+                              Save
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setInlineNewCategory(false)}
+                              className="p-1 opacity-60 hover:opacity-100"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <select
+                            value={productForm.category}
+                            onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
+                            className={`w-full px-3.5 py-2 rounded-xl border ${inputClass}`}
+                          >
+                            {allCategoryOptions.map((c) => (
+                              <option key={c} value={c}>
+                                {c}
+                              </option>
+                            ))}
+                          </select>
+                        )}
                       </div>
 
                       {/* SKU */}
@@ -4546,14 +4802,40 @@ Thank you for choosing Cars9 Studio!`;
                         />
                       </div>
 
+                      {/* Warranty Selector: Days, Months, Year */}
                       <div>
-                        <label className="block mb-1 opacity-70">Warranty (Months)</label>
-                        <input
-                          type="number"
-                          value={productForm.warrantyMonths}
-                          onChange={(e) => setProductForm({ ...productForm, warrantyMonths: Number(e.target.value) })}
-                          className={`w-full px-3.5 py-2 rounded-xl border ${inputClass}`}
-                        />
+                        <label className="block mb-1 opacity-70 font-bold">Warranty Duration *</label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            min={1}
+                            value={productForm.warrantyValue}
+                            onChange={(e) => {
+                              const val = Math.max(1, Number(e.target.value) || 1);
+                              setProductForm({ ...productForm, warrantyValue: val });
+                            }}
+                            placeholder="e.g. 1"
+                            className={`w-28 px-3.5 py-2 rounded-xl border font-mono ${inputClass}`}
+                          />
+                          <select
+                            value={productForm.warrantyUnit}
+                            onChange={(e) => setProductForm({ ...productForm, warrantyUnit: e.target.value as "days" | "months" | "years" })}
+                            className={`flex-1 px-3.5 py-2 rounded-xl border font-mono ${inputClass}`}
+                          >
+                            <option value="days">Days</option>
+                            <option value="months">Months</option>
+                            <option value="years">Year / Years</option>
+                          </select>
+                        </div>
+                        <p className="text-[10px] opacity-50 mt-1">
+                          Enters as: {productForm.warrantyValue} {
+                            productForm.warrantyUnit === "days"
+                              ? (productForm.warrantyValue === 1 ? "Day" : "Days")
+                              : productForm.warrantyUnit === "years"
+                              ? (productForm.warrantyValue === 1 ? "Year" : "Years")
+                              : (productForm.warrantyValue === 1 ? "Month" : "Months")
+                          }
+                        </p>
                       </div>
 
                       {/* Reference Price & Location */}
@@ -7183,6 +7465,207 @@ Thank you for choosing Cars9 Studio!`;
                   </span>
                 </div>
               </div>
+            </div>
+
+            {/* Homepage Action & Feature Cards Control (Top 4 Cards) */}
+            <div className={`${cardClass} border rounded-3xl p-6 sm:p-8 space-y-6`}>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200 dark:border-slate-800">
+                <div>
+                  <h3 className="text-base font-extrabold flex items-center gap-2">
+                    <LayoutGrid className="w-5 h-5 text-red-500" />
+                    <span>Homepage Action & Feature Cards (Top 4 Strip Cards)</span>
+                  </h3>
+                  <p className="text-xs opacity-60 mt-0.5">
+                    Rename titles, update subtitles, and configure custom button/link URLs for each of the 4 quick action cards on the storefront.
+                  </p>
+                </div>
+                {homeCardsSavedMsg && (
+                  <div className="flex items-center gap-1.5 text-xs font-mono text-emerald-500 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>{homeCardsSavedMsg}</span>
+                  </div>
+                )}
+              </div>
+
+              <form onSubmit={handleSaveHomeCards} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  
+                  {/* Card 1: Zero Wire Slicing / Badge */}
+                  <div className={`p-4 sm:p-5 rounded-2xl border ${innerCardClass} space-y-3`}>
+                    <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
+                      <div className="w-7 h-7 rounded-lg bg-red-500/10 text-red-600 dark:text-red-500 flex items-center justify-center">
+                        <ShieldCheck className="w-4 h-4" />
+                      </div>
+                      <span className="font-bold text-xs">Card 1 (Left Feature Badge)</span>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-mono opacity-70">Card Title</label>
+                      <input
+                        type="text"
+                        value={homeCard1Title}
+                        onChange={(e) => setHomeCard1Title(e.target.value)}
+                        placeholder="e.g. Zero Wire Slicing"
+                        className={`w-full px-3 py-2 rounded-xl border text-xs ${inputClass}`}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-mono opacity-70">Subtitle</label>
+                      <input
+                        type="text"
+                        value={homeCard1Sub}
+                        onChange={(e) => setHomeCard1Sub(e.target.value)}
+                        placeholder="e.g. 100% OEM Couplers"
+                        className={`w-full px-3 py-2 rounded-xl border text-xs ${inputClass}`}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-mono opacity-70">Custom Button/Link URL (Optional)</label>
+                      <input
+                        type="text"
+                        value={homeCard1Url}
+                        onChange={(e) => setHomeCard1Url(e.target.value)}
+                        placeholder="e.g. /about or https://... (Leave empty for badge)"
+                        className={`w-full px-3 py-2 rounded-xl border text-xs font-mono ${inputClass}`}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Card 2: Digital Warranty */}
+                  <div className={`p-4 sm:p-5 rounded-2xl border ${innerCardClass} space-y-3`}>
+                    <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
+                      <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                        <Award className="w-4 h-4" />
+                      </div>
+                      <span className="font-bold text-xs">Card 2 (Digital Warranty Card)</span>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-mono opacity-70">Card Title</label>
+                      <input
+                        type="text"
+                        value={homeCard2Title}
+                        onChange={(e) => setHomeCard2Title(e.target.value)}
+                        placeholder="e.g. Warranty Protected"
+                        className={`w-full px-3 py-2 rounded-xl border text-xs ${inputClass}`}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-mono opacity-70">Subtitle</label>
+                      <input
+                        type="text"
+                        value={homeCard2Sub}
+                        onChange={(e) => setHomeCard2Sub(e.target.value)}
+                        placeholder="e.g. Verify Certificate →"
+                        className={`w-full px-3 py-2 rounded-xl border text-xs ${inputClass}`}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-mono opacity-70">Custom Button/Link URL</label>
+                      <input
+                        type="text"
+                        value={homeCard2Url}
+                        onChange={(e) => setHomeCard2Url(e.target.value)}
+                        placeholder="Default: /warranty"
+                        className={`w-full px-3 py-2 rounded-xl border text-xs font-mono ${inputClass}`}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Card 3: WhatsApp Chat Card */}
+                  <div className={`p-4 sm:p-5 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 space-y-3`}>
+                    <div className="flex items-center gap-2 pb-2 border-b border-emerald-500/20">
+                      <div className="w-7 h-7 rounded-lg bg-[#25D366]/20 text-[#25D366] flex items-center justify-center">
+                        <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                          <path d="M12.031 2C6.495 2 2 6.494 2 12.03c0 1.97.57 3.81 1.554 5.37L2 22l4.77-1.523A9.975 9.975 0 0 0 12.031 22c5.535 0 10.03-4.494 10.03-10.03C22.062 6.494 17.566 2 12.031 2zm5.82 14.28c-.24.67-1.39 1.28-1.92 1.34-.49.06-1.12.08-3.6-1.02-2.98-1.32-4.88-4.37-5.03-4.57-.15-.2-1.2-1.6-1.2-3.05 0-1.45.75-2.16 1.02-2.45.27-.29.59-.36.79-.36.2 0 .4 0 .58.01.19.01.44-.07.69.52.26.61.88 2.14.96 2.3.08.15.13.34.02.54-.1.2-.16.32-.31.5-.15.18-.32.4-.46.54-.15.15-.31.32-.13.63.18.31.79 1.3 1.7 2.11 1.17 1.04 2.15 1.36 2.46 1.51.31.15.49.13.67-.08.18-.21.78-.91.99-1.22.21-.31.42-.26.71-.15.29.11 1.84.87 2.15 1.03.31.15.52.23.6.36.08.14.08.79-.16 1.46z" />
+                        </svg>
+                      </div>
+                      <span className="font-bold text-xs text-emerald-700 dark:text-emerald-400">Card 3 (WhatsApp Direct Chat Card)</span>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-mono opacity-70">Card Title (Easy Name)</label>
+                      <input
+                        type="text"
+                        value={homeCard3Title}
+                        onChange={(e) => setHomeCard3Title(e.target.value)}
+                        placeholder="e.g. WhatsApp Chat or Chat with Us"
+                        className={`w-full px-3 py-2 rounded-xl border text-xs ${inputClass}`}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-mono opacity-70">Subtitle</label>
+                      <input
+                        type="text"
+                        value={homeCard3Sub}
+                        onChange={(e) => setHomeCard3Sub(e.target.value)}
+                        placeholder="e.g. Direct Chat →"
+                        className={`w-full px-3 py-2 rounded-xl border text-xs ${inputClass}`}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-mono opacity-70">Custom Button/Link URL (Optional)</label>
+                      <input
+                        type="text"
+                        value={homeCard3Url}
+                        onChange={(e) => setHomeCard3Url(e.target.value)}
+                        placeholder="Leave blank to use WhatsApp Studio number routing"
+                        className={`w-full px-3 py-2 rounded-xl border text-xs font-mono ${inputClass}`}
+                      />
+                      <span className="text-[10px] opacity-60 font-mono block">If left blank, automatically routes to WhatsApp via wa.me link.</span>
+                    </div>
+                  </div>
+
+                  {/* Card 4: Store Locator / Maps */}
+                  <div className={`p-4 sm:p-5 rounded-2xl border ${innerCardClass} space-y-3`}>
+                    <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
+                      <div className="w-7 h-7 rounded-lg bg-red-500/10 text-red-600 dark:text-red-500 flex items-center justify-center">
+                        <MapPin className="w-4 h-4" />
+                      </div>
+                      <span className="font-bold text-xs">Card 4 (Store Locator / Google Maps Card)</span>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-mono opacity-70">Card Title</label>
+                      <input
+                        type="text"
+                        value={homeCard4Title}
+                        onChange={(e) => setHomeCard4Title(e.target.value)}
+                        placeholder="e.g. Store Locator"
+                        className={`w-full px-3 py-2 rounded-xl border text-xs ${inputClass}`}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-mono opacity-70">Subtitle</label>
+                      <input
+                        type="text"
+                        value={homeCard4Sub}
+                        onChange={(e) => setHomeCard4Sub(e.target.value)}
+                        placeholder="e.g. Google Maps →"
+                        className={`w-full px-3 py-2 rounded-xl border text-xs ${inputClass}`}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-mono opacity-70">Custom Button/Link URL (Optional)</label>
+                      <input
+                        type="text"
+                        value={homeCard4Url}
+                        onChange={(e) => setHomeCard4Url(e.target.value)}
+                        placeholder="Leave blank to use footer Google Maps link"
+                        className={`w-full px-3 py-2 rounded-xl border text-xs font-mono ${inputClass}`}
+                      />
+                    </div>
+                  </div>
+
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <button
+                    type="submit"
+                    disabled={savingHomeCards}
+                    className="px-6 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md transition flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>{savingHomeCards ? "Saving..." : "Save Homepage Cards"}</span>
+                  </button>
+                </div>
+              </form>
             </div>
 
             {/* 2. Footer Studio Information Controls */}
