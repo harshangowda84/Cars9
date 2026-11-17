@@ -7,7 +7,7 @@ import { getSession } from '@/lib/auth';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export const defaultSettings: Record<string, any> = {
+const defaultSettings: Record<string, any> = {
   // Passwords (internal defaults)
   admin_password: "cars9pass",
   staff_password: "cars9staff",
