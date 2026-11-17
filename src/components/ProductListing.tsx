@@ -9,6 +9,8 @@ import { getDisplayImageUrl } from "@/lib/imageUrl";
 import { ShareProductModal } from "@/components/ShareProductModal";
 import { 
   Plus, 
+  Minus,
+  Trash2,
   Check, 
   Eye, 
   ShieldCheck, 
@@ -38,24 +40,24 @@ const CATEGORIES = [
 
 interface ProductCardProps {
   item: CarPart;
-  isAdded: boolean;
   settings: any;
   onSelectProduct: (p: CarPart) => void;
   onShareProduct: (p: CarPart) => void;
-  onAddToCart: (p: CarPart) => void;
 }
 
 function ProductCardItem({
   item,
-  isAdded,
   settings,
   onSelectProduct,
   onShareProduct,
-  onAddToCart,
 }: ProductCardProps) {
+  const { items, addToCart, updateQuantity, removeFromCart } = useCart();
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const cycleIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const cartItem = items.find((i) => i.id === item.id);
+  const quantity = cartItem?.quantity || 0;
 
   // Collect and deduplicate all images for hover slideshow (Daiva Tech pattern)
   const allImages = useMemo(() => {
@@ -94,7 +96,7 @@ function ProductCardItem({
 
   return (
     <div
-      className="group relative flex flex-col justify-between bg-white dark:bg-[#0f1523] rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 shadow-sm hover:shadow-2xl transition-all duration-300 overflow-hidden"
+      className="group relative flex flex-col justify-between bg-white dark:bg-[#0f1523] rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 shadow-sm hover:shadow-2xl transition-all duration-300 overflow-hidden h-full"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -157,51 +159,53 @@ function ProductCardItem({
       </Link>
 
       {/* Card Content & Details */}
-      <div className="p-5 flex-1 flex flex-col justify-between">
+      <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
         <div>
           {/* Vehicle Compatibility & Category */}
-          <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 mb-1.5">
-            <span className="text-red-600 dark:text-red-400 font-bold uppercase">
+          <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 mb-1.5 gap-2">
+            <span className="text-red-600 dark:text-red-400 font-bold uppercase truncate">
               {item.brand} • {item.subbrand}
             </span>
-            <span>{item.category}</span>
+            <span className="shrink-0 text-[10px] sm:text-[11px]">{item.category}</span>
           </div>
 
           {/* Product Name with Link */}
           <Link href={`/products/${item.id}`}>
-            <h3 className="text-sm font-extrabold text-slate-900 dark:text-white line-clamp-2 leading-snug group-hover:text-red-600 dark:group-hover:text-red-400 transition cursor-pointer">
+            <h3 className="text-sm font-extrabold text-slate-900 dark:text-white line-clamp-2 leading-snug group-hover:text-red-600 dark:group-hover:text-red-400 transition cursor-pointer min-h-[2.5rem]">
               {item.name}
             </h3>
           </Link>
 
           {/* Short Description */}
-          <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-2 leading-relaxed font-normal">
+          <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-2 leading-relaxed font-normal min-h-[2rem]">
             {item.description}
           </p>
 
           {/* Coupler Fitment Tag (Admin On/Off Controlled) */}
           {settings.plp_showCouplerBadge && (
-            <div className="mt-3.5 inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-              <ShieldCheck className="w-3.5 h-3.5" />
+            <div className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+              <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
               <span>OEM Coupler-to-Coupler Fitment</span>
             </div>
           )}
         </div>
 
-        {/* Bottom Actions: Specs + Quick Preview + Share + Add to Enquiry */}
-        <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center gap-2">
+        {/* Bottom Actions: Specs + Quick Preview + Share + Add / Adjust Unit Stepper */}
+        <div className="mt-4 pt-3.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center gap-1.5 sm:gap-2">
           <Link
             href={`/products/${item.id}`}
-            className="flex-1 py-2.5 px-3 rounded-xl border border-slate-200 dark:border-slate-700/80 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold transition text-center"
+            className="flex-1 h-9 px-2 sm:px-2.5 rounded-xl border border-slate-200 dark:border-slate-700/80 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold transition flex items-center justify-center whitespace-nowrap truncate min-w-0"
+            title="View Media & Specifications"
           >
-            Media & Specs
+            <span className="truncate">Media & Specs</span>
           </Link>
 
           {/* Quick Preview Button (Admin On/Off Controlled) */}
           {settings.plp_showQuickPreview && (
             <button
+              type="button"
               onClick={() => onSelectProduct(item)}
-              className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700/80 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition"
+              className="h-9 w-9 shrink-0 rounded-xl border border-slate-200 dark:border-slate-700/80 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition flex items-center justify-center"
               title="Quick Preview"
             >
               <Eye className="w-4 h-4" />
@@ -211,29 +215,82 @@ function ProductCardItem({
           {/* Share Modal Trigger (Admin On/Off Controlled) */}
           {settings.plp_showShareButton !== false && (
             <button
+              type="button"
               onClick={() => onShareProduct(item)}
-              className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700/80 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white"
+              className="h-9 w-9 shrink-0 rounded-xl border border-slate-200 dark:border-slate-700/80 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white flex items-center justify-center"
               title="Share Product"
             >
               <Share2 className="w-4 h-4" />
             </button>
           )}
 
-          {/* Add to Enquiry List Button (does NOT open drawer on PLP) */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onAddToCart(item);
-            }}
-            className={`p-2.5 rounded-xl font-bold transition active:scale-95 flex items-center justify-center ${
-              isAdded
-                ? "bg-slate-800 text-emerald-400 border border-emerald-500/30"
-                : "bg-red-600 hover:bg-red-700 text-white shadow-md shadow-red-600/20"
-            }`}
-            title={isAdded ? "Added to Enquiry List" : "Add to Enquiry List"}
-          >
-            {isAdded ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-          </button>
+          {/* Add to Enquiry / Interactive Unit Stepper */}
+          {quantity > 0 ? (
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="h-9 shrink-0 flex items-center rounded-xl bg-slate-900 text-white dark:bg-slate-800 border border-slate-700/80 shadow-sm overflow-hidden"
+              title={`${quantity} unit${quantity > 1 ? 's' : ''} in quotation`}
+            >
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (quantity <= 1) {
+                    removeFromCart(item.id);
+                  } else {
+                    updateQuantity(item.id, quantity - 1);
+                  }
+                }}
+                className="h-full w-7 flex items-center justify-center hover:bg-slate-800 dark:hover:bg-slate-700 text-slate-300 hover:text-red-400 transition active:scale-90"
+                title={quantity <= 1 ? "Remove from quotation" : "Decrease unit"}
+              >
+                {quantity <= 1 ? (
+                  <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                ) : (
+                  <Minus className="w-3.5 h-3.5" />
+                )}
+              </button>
+              <span className="text-xs font-mono font-bold px-1 min-w-[20px] text-center text-white select-none">
+                {quantity}
+              </span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  updateQuantity(item.id, quantity + 1);
+                }}
+                className="h-full w-7 flex items-center justify-center hover:bg-slate-800 dark:hover:bg-slate-700 text-slate-300 hover:text-emerald-400 transition active:scale-90"
+                title="Increase unit"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                addToCart(
+                  {
+                    id: item.id,
+                    name: item.name,
+                    sku: item.sku,
+                    brand: item.brand,
+                    subbrand: item.subbrand,
+                    category: item.category,
+                    imageUrl: item.imageUrl,
+                    warrantyMonths: item.warrantyMonths,
+                  },
+                  1,
+                  false
+                );
+              }}
+              className="h-9 w-9 shrink-0 rounded-xl font-bold transition-all active:scale-95 flex items-center justify-center bg-red-600 hover:bg-red-700 text-white shadow-md shadow-red-600/20 border border-transparent"
+              title="Add to Quotation"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -248,27 +305,8 @@ export function ProductListing({
   onCategoryChange,
   hideHeader = false,
 }: ProductListingProps) {
-  const { addToCart, items } = useCart();
   const { settings } = useSettings();
   const [sharingProduct, setSharingProduct] = useState<CarPart | null>(null);
-
-  const handleAddToCart = (item: CarPart) => {
-    // Add to cart with openDrawer = false (does NOT show cart drawer on PLP)
-    addToCart(
-      {
-        id: item.id,
-        name: item.name,
-        sku: item.sku,
-        brand: item.brand,
-        subbrand: item.subbrand,
-        category: item.category,
-        imageUrl: item.imageUrl,
-        warrantyMonths: item.warrantyMonths,
-      },
-      1,
-      false
-    );
-  };
 
   return (
     <section id="catalog" className={`w-full ${hideHeader ? "pt-1 pb-6" : "pt-2 sm:pt-4 pb-8 sm:pb-12"}`}>
@@ -318,21 +356,15 @@ export function ProductListing({
       {/* PLP Product Grid: Pictures Only, NO PRICES */}
       {products.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 sm:gap-6">
-          {products.map((item) => {
-            const isAdded = items.some((cartItem) => cartItem.id === item.id);
-
-            return (
-              <ProductCardItem
-                key={item.id}
-                item={item}
-                isAdded={isAdded}
-                settings={settings}
-                onSelectProduct={onSelectProduct}
-                onShareProduct={(prod) => setSharingProduct(prod)}
-                onAddToCart={handleAddToCart}
-              />
-            );
-          })}
+          {products.map((item) => (
+            <ProductCardItem
+              key={item.id}
+              item={item}
+              settings={settings}
+              onSelectProduct={onSelectProduct}
+              onShareProduct={(prod) => setSharingProduct(prod)}
+            />
+          ))}
         </div>
       ) : (
         <div className="py-20 text-center bg-white dark:bg-[#0f1523] border border-slate-200 dark:border-slate-800 rounded-3xl p-8">
