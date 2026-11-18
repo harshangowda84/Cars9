@@ -62,6 +62,15 @@ const defaultSettings: Record<string, any> = {
   home_card4_subtitle: "Google Maps →",
   home_card4_url: "",
 
+  // Custom Accessory Categories
+  custom_categories: [
+    "Infotainment & Audio",
+    "Lighting & Electrical",
+    "Interior Styling",
+    "Exterior Styling",
+    "Car Care & Utility"
+  ],
+
   // Fallback Default Hero Banner (Shown when no active banners)
   default_banner_title1: "ELEVATE YOUR CAR WITH",
   default_banner_title2: "CUSTOM ACCESSORIES",

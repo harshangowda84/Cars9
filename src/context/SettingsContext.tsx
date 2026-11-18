@@ -57,6 +57,9 @@ export interface SiteSettings {
   home_card4_subtitle?: string;
   home_card4_url?: string;
 
+  // Custom Accessory Categories
+  custom_categories?: string[];
+
   // Fallback Default Hero Banner (Shown when no active banners)
   default_banner_title1?: string;
   default_banner_title2?: string;
@@ -145,6 +148,14 @@ const defaultSettings: SiteSettings = {
   home_card4_title: "Store Locator",
   home_card4_subtitle: "Google Maps →",
   home_card4_url: "",
+
+  custom_categories: [
+    "Infotainment & Audio",
+    "Lighting & Electrical",
+    "Interior Styling",
+    "Exterior Styling",
+    "Car Care & Utility"
+  ],
 
   default_banner_title1: "ELEVATE YOUR CAR WITH",
   default_banner_title2: "CUSTOM ACCESSORIES",

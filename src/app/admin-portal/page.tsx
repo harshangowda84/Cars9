@@ -239,10 +239,19 @@ export default function AdminPortalPage() {
   const [inlineCategoryName, setInlineCategoryName] = useState("");
   const [customCategories, setCustomCategories] = useState<string[]>([]);
 
+  // Category Customization state (Add, Edit, Delete)
+  const [showManageCategories, setShowManageCategories] = useState(false);
+  const [editingCategoryOldName, setEditingCategoryOldName] = useState<string | null>(null);
+  const [editingCategoryNewName, setEditingCategoryNewName] = useState("");
+  const [isUpdatingCategory, setIsUpdatingCategory] = useState(false);
+
   // Custom Years in Product Modal
   const [customYears, setCustomYears] = useState<string[]>([]);
   const [newYearInput, setNewYearInput] = useState("");
   const [showAddYearInput, setShowAddYearInput] = useState(false);
+
+  // Universal Product Toggle in Product Modal
+  const [isUniversalProduct, setIsUniversalProduct] = useState(false);
 
   const [productForm, setProductForm] = useState({
     name: "",
@@ -1199,33 +1208,163 @@ export default function AdminPortalPage() {
     setToastNotice({ text: `Year "${cleaned}" added and selected!`, type: "success" });
   };
 
-  const handleInlineSaveCategory = () => {
+  const DEFAULT_ACCESSORY_CATEGORIES = [
+    "Infotainment & Audio",
+    "Lighting & Electrical",
+    "Interior Styling",
+    "Exterior Styling",
+    "Car Care & Utility"
+  ];
+
+  const handleInlineSaveCategory = async () => {
     const trimmed = inlineCategoryName.trim();
     if (!trimmed) return;
-    if (!customCategories.includes(trimmed)) {
+    const currentList = Array.isArray(settings.custom_categories) && settings.custom_categories.length > 0
+      ? [...settings.custom_categories]
+      : [...DEFAULT_ACCESSORY_CATEGORIES];
+    if (!currentList.some((c) => c.toLowerCase() === trimmed.toLowerCase())) {
+      const next = [...currentList, trimmed];
+      await updateSetting("custom_categories", next);
       setCustomCategories((prev) => [...prev, trimmed]);
     }
     setProductForm((prev) => ({ ...prev, category: trimmed }));
     setInlineCategoryName("");
     setInlineNewCategory(false);
-    setToastNotice({ text: `Category "${trimmed}" added!`, type: "success" });
+    showToastNotice(`Category "${trimmed}" added and selected!`, "success");
+  };
+
+  const handleSaveCategoryRename = async (oldName: string) => {
+    const trimmed = editingCategoryNewName.trim();
+    if (!trimmed || trimmed.toLowerCase() === oldName.toLowerCase()) {
+      setEditingCategoryOldName(null);
+      return;
+    }
+    setIsUpdatingCategory(true);
+    try {
+      // 1. Batch update all products in database
+      await fetch("/api/parts", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "update_category",
+          oldCategory: oldName,
+          newCategory: trimmed,
+        }),
+      });
+
+      // 2. Update custom_categories in settings
+      const currentList = Array.isArray(settings.custom_categories) && settings.custom_categories.length > 0
+        ? [...settings.custom_categories]
+        : [...DEFAULT_ACCESSORY_CATEGORIES];
+      const nextList = currentList.map((c) => (c.toLowerCase() === oldName.toLowerCase() ? trimmed : c));
+      if (!nextList.some((c) => c.toLowerCase() === trimmed.toLowerCase())) {
+        nextList.push(trimmed);
+      }
+      await updateSetting("custom_categories", nextList);
+
+      // 3. Update local products & recycle bin state
+      setProducts((prev) =>
+        prev.map((p) => (p.category.toLowerCase() === oldName.toLowerCase() ? { ...p, category: trimmed } : p))
+      );
+      setRecycleBin((prev) =>
+        prev.map((p) => (p.category.toLowerCase() === oldName.toLowerCase() ? { ...p, category: trimmed } : p))
+      );
+      if (productForm.category.toLowerCase() === oldName.toLowerCase()) {
+        setProductForm((prev) => ({ ...prev, category: trimmed }));
+      }
+
+      setEditingCategoryOldName(null);
+      setEditingCategoryNewName("");
+      showToastNotice(`Category renamed to "${trimmed}"!`, "success");
+    } catch (err: any) {
+      console.error("Failed to rename category", err);
+      alert("Failed to rename category: " + err.message);
+    } finally {
+      setIsUpdatingCategory(false);
+    }
+  };
+
+  const handleDeleteCategory = async (targetCategory: string) => {
+    const currentList = Array.isArray(settings.custom_categories) && settings.custom_categories.length > 0
+      ? [...settings.custom_categories]
+      : [...DEFAULT_ACCESSORY_CATEGORIES];
+
+    if (currentList.length <= 1) {
+      alert("You must keep at least one category in the catalog.");
+      return;
+    }
+
+    const affectedCount = products.filter(
+      (p) => !p.isDeleted && p.category.toLowerCase() === targetCategory.toLowerCase()
+    ).length;
+    const fallbackCategory = currentList.find(
+      (c) => c.toLowerCase() !== targetCategory.toLowerCase()
+    ) || "Accessories";
+
+    const confirmMsg = affectedCount > 0
+      ? `Category "${targetCategory}" is currently used by ${affectedCount} active product(s).\n\nDeleting it will reassign those products to "${fallbackCategory}".\n\nAre you sure you want to delete this category?`
+      : `Are you sure you want to delete category "${targetCategory}"?`;
+
+    if (!window.confirm(confirmMsg)) return;
+
+    setIsUpdatingCategory(true);
+    try {
+      // 1. Batch reassign products in database
+      if (affectedCount > 0) {
+        await fetch("/api/parts", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "update_category",
+            oldCategory: targetCategory,
+            newCategory: fallbackCategory,
+          }),
+        });
+      }
+
+      // 2. Remove from custom_categories in settings
+      const nextList = currentList.filter(
+        (c) => c.toLowerCase() !== targetCategory.toLowerCase()
+      );
+      await updateSetting("custom_categories", nextList);
+
+      // 3. Update local state
+      setProducts((prev) =>
+        prev.map((p) =>
+          p.category.toLowerCase() === targetCategory.toLowerCase()
+            ? { ...p, category: fallbackCategory }
+            : p
+        )
+      );
+      setRecycleBin((prev) =>
+        prev.map((p) =>
+          p.category.toLowerCase() === targetCategory.toLowerCase()
+            ? { ...p, category: fallbackCategory }
+            : p
+        )
+      );
+      if (productForm.category.toLowerCase() === targetCategory.toLowerCase()) {
+        setProductForm((prev) => ({ ...prev, category: fallbackCategory }));
+      }
+
+      showToastNotice(`Category "${targetCategory}" deleted successfully!`, "success");
+    } catch (err: any) {
+      console.error("Failed to delete category", err);
+      alert("Failed to delete category: " + err.message);
+    } finally {
+      setIsUpdatingCategory(false);
+    }
   };
 
   const allCategoryOptions = useMemo(() => {
-    const DEFAULT_CATEGORIES = [
-      "Infotainment & Audio",
-      "Lighting & Electrical",
-      "Interior Styling",
-      "Exterior Styling",
-      "Car Care & Utility"
-    ];
-    const set = new Set<string>(DEFAULT_CATEGORIES);
-    products.forEach((p) => { if (p.category) set.add(p.category); });
-    recycleBin.forEach((p) => { if (p.category) set.add(p.category); });
+    const baseList = Array.isArray(settings.custom_categories) && settings.custom_categories.length > 0
+      ? settings.custom_categories
+      : DEFAULT_ACCESSORY_CATEGORIES;
+    const set = new Set<string>(baseList);
     customCategories.forEach((c) => set.add(c));
     if (productForm.category) set.add(productForm.category);
     return Array.from(set);
-  }, [products, recycleBin, customCategories, productForm.category]);
+  }, [settings.custom_categories, customCategories, productForm.category]);
 
   const toggleYear = (yr: string) => {
     setProductForm((prev) => {
@@ -1566,12 +1705,18 @@ export default function AdminPortalPage() {
     setInlineNewBrand(false);
     setInlineNewModel(false);
     setInlineNewCategory(false);
+    setShowManageCategories(false);
+    setEditingCategoryOldName(null);
     setShowAddYearInput(false);
+    setIsUniversalProduct(false);
     setShowProductModal(true);
   };
 
   const openEditProductModal = (part: CarPart) => {
     setEditingProduct(part);
+    setIsUniversalProduct(part.brand?.toLowerCase() === "universal");
+    setShowManageCategories(false);
+    setEditingCategoryOldName(null);
     const existingImages = part.images && part.images.length > 0 ? part.images : [part.imageUrl || ""];
     while (existingImages.length < 5) existingImages.push("");
 
@@ -1671,10 +1816,17 @@ export default function AdminPortalPage() {
       const validImages = productForm.images.filter((img) => img.trim().length > 0);
       const primaryImage = validImages[0] || "/images/placeholder.jpg";
 
+      const finalBrand = isUniversalProduct ? "Universal" : productForm.brand;
+      const finalSubbrand = isUniversalProduct ? "All Models" : productForm.subbrand;
+      const finalYears = isUniversalProduct ? ["All"] : productForm.compatibleYears;
+      const finalBadge = isUniversalProduct && (!productForm.badge || productForm.badge === "OEM Coupler")
+        ? "Universal Fit"
+        : productForm.badge;
+
       const payload = {
         name: productForm.name,
-        brand: productForm.brand,
-        subbrand: productForm.subbrand,
+        brand: finalBrand,
+        subbrand: finalSubbrand,
         category: productForm.category,
         sku: productForm.sku,
         description: productForm.description,
@@ -1684,8 +1836,8 @@ export default function AdminPortalPage() {
         imageUrl: primaryImage,
         images: validImages,
         videoUrl: productForm.videoUrl.trim(),
-        compatibleYears: productForm.compatibleYears,
-        badge: productForm.badge,
+        compatibleYears: finalYears,
+        badge: finalBadge,
         warrantyMonths: calculatedMonths,
         specifications: specObj,
       };
@@ -1753,12 +1905,12 @@ export default function AdminPortalPage() {
   }, [recycleBin, recycleSearch, recycleBrandFilter, recycleCategoryFilter]);
 
   const availableCategories = useMemo(() => {
-    const set = new Set<string>();
+    const set = new Set<string>(allCategoryOptions);
     [...products, ...recycleBin].forEach((p) => {
       if (p.category) set.add(p.category);
     });
     return Array.from(set);
-  }, [products, recycleBin]);
+  }, [allCategoryOptions, products, recycleBin]);
 
   // =========================================================================
   // 3. ENQUIRIES & QUOTATION PRICING DESK HANDLERS
@@ -4089,8 +4241,17 @@ Thank you for choosing Cars9 Studio!`;
                             </div>
                           </td>
                           <td className="py-3 px-3 font-mono">
-                            <div className="font-bold">{item.brand}</div>
-                            <div className="text-[10px] opacity-60">{item.subbrand}</div>
+                            {item.brand.toLowerCase() === "universal" ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 whitespace-nowrap">
+                                <Sparkles className="w-2.5 h-2.5 shrink-0" />
+                                Universal Fit
+                              </span>
+                            ) : (
+                              <>
+                                <div className="font-bold">{item.brand}</div>
+                                <div className="text-[10px] opacity-60">{item.subbrand}</div>
+                              </>
+                            )}
                           </td>
                           <td className="py-3 px-3 font-mono text-[10px]">
                             {Array.isArray(item.compatibleYears) && item.compatibleYears.length > 0 ? (
@@ -4491,7 +4652,70 @@ Thank you for choosing Cars9 Studio!`;
                         />
                       </div>
 
-                      {/* Dynamic Car Make / Brand with [+ Add New Brand] button */}
+                      {/* Universal Product Checkbox Banner */}
+                      <div className="sm:col-span-2 p-3 sm:p-3.5 rounded-2xl border transition-all duration-200 bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent border-emerald-500/30">
+                        <label className="flex items-start sm:items-center gap-3 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={isUniversalProduct}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              setIsUniversalProduct(checked);
+                              if (checked) {
+                                setProductForm((prev) => ({
+                                  ...prev,
+                                  brand: "Universal",
+                                  subbrand: "All Models",
+                                  compatibleYears: ["All"],
+                                }));
+                              } else {
+                                const defaultBrand = brands.find((b) => b.name.toLowerCase() !== "universal")?.name || brands[0]?.name || "Toyota";
+                                const defaultModels = brands.find((b) => b.name === defaultBrand)?.subbrands || [];
+                                const firstModel = defaultModels[0]
+                                  ? typeof defaultModels[0] === "string"
+                                    ? defaultModels[0]
+                                    : defaultModels[0].name
+                                  : "Fortuner";
+                                setProductForm((prev) => ({
+                                  ...prev,
+                                  brand: defaultBrand,
+                                  subbrand: firstModel,
+                                  compatibleYears: ["2024", "2023", "2022", "2021", "2020"],
+                                }));
+                              }
+                            }}
+                            className="mt-0.5 sm:mt-0 w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300 dark:border-slate-700 cursor-pointer shrink-0"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-1.5 font-bold text-emerald-700 dark:text-emerald-400 text-xs">
+                              <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                              <span>Universal Product (Fits All Car Brands & Models)</span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-sans mt-0.5 leading-relaxed">
+                              Enable for universal accessories like Speakers, Amplifiers, Dashcams, Ambient Lights, Subwoofers, Horns, etc. Automatically shows across all car selections.
+                            </p>
+                          </div>
+                        </label>
+                      </div>
+
+                      {isUniversalProduct ? (
+                        <div className="sm:col-span-2 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="flex items-center gap-2.5 text-emerald-700 dark:text-emerald-400 font-bold text-xs">
+                            <CheckCircle2 className="w-5 h-5 shrink-0" />
+                            <div>
+                              <div>Fitment: Universal Fit (All Car Makes & Models)</div>
+                              <p className="text-[11px] font-sans font-normal opacity-80 mt-0.5">
+                                Automatically visible to customers browsing any car model or visiting without vehicle filter.
+                              </p>
+                            </div>
+                          </div>
+                          <span className="shrink-0 text-[10px] font-mono font-bold px-2.5 py-1 rounded-xl bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-500/40">
+                            Brand: Universal • All Years
+                          </span>
+                        </div>
+                      ) : (
+                        <>
+                          {/* Dynamic Car Make / Brand with [+ Add New Brand] button */}
                       <div>
                         <div className="flex items-center justify-between mb-1">
                           <label className="opacity-70 font-bold">Car Make / Brand *</label>
@@ -4717,19 +4941,42 @@ Thank you for choosing Cars9 Studio!`;
                           Selected: {productForm.compatibleYears.join(", ") || "None"}
                         </p>
                       </div>
+                    </>
+                  )}
 
-                      {/* Category with [+ Add New Category] button */}
+                      {/* Category with [+ Add Category] & [Manage Categories] */}
                       <div>
                         <div className="flex items-center justify-between mb-1">
                           <label className="opacity-70 font-bold">Category *</label>
-                          <button
-                            type="button"
-                            onClick={() => setInlineNewCategory(!inlineNewCategory)}
-                            className="text-[10px] text-red-600 dark:text-red-400 font-bold hover:underline flex items-center gap-0.5"
-                          >
-                            <Plus className="w-3 h-3" />
-                            <span>Add New Category</span>
-                          </button>
+                          <div className="flex items-center gap-1.5 text-[10px]">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setInlineNewCategory(!inlineNewCategory);
+                                setShowManageCategories(false);
+                              }}
+                              className="text-red-600 dark:text-red-400 font-bold hover:underline flex items-center gap-0.5"
+                            >
+                              <Plus className="w-3 h-3" />
+                              <span>Add Category</span>
+                            </button>
+                            <span>•</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowManageCategories(!showManageCategories);
+                                setInlineNewCategory(false);
+                              }}
+                              className={`font-bold hover:underline flex items-center gap-1 ${
+                                showManageCategories
+                                  ? "text-red-600 dark:text-red-400"
+                                  : "text-slate-600 dark:text-slate-300"
+                              }`}
+                            >
+                              <Sliders className="w-3 h-3" />
+                              <span>Manage ({allCategoryOptions.length})</span>
+                            </button>
+                          </div>
                         </div>
 
                         {inlineNewCategory ? (
@@ -4775,6 +5022,100 @@ Thank you for choosing Cars9 Studio!`;
                               </option>
                             ))}
                           </select>
+                        )}
+
+                        {/* Interactive Manage Categories Panel (Add, Edit, Delete) */}
+                        {showManageCategories && (
+                          <div className="mt-2.5 p-3 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2.5 animate-in fade-in duration-200">
+                            <div className="flex items-center justify-between pb-1.5 border-b border-slate-200 dark:border-slate-800 text-[11px]">
+                              <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
+                                <Sliders className="w-3 h-3 text-red-500" />
+                                <span>Customize Categories</span>
+                              </span>
+                              <span className="text-[10px] opacity-60">Add, rename or delete</span>
+                            </div>
+
+                            <div className="max-h-52 overflow-y-auto space-y-1.5 pr-0.5">
+                              {allCategoryOptions.map((cat) => {
+                                const count = products.filter((p) => !p.isDeleted && p.category?.toLowerCase() === cat.toLowerCase()).length;
+                                const isEditing = editingCategoryOldName === cat;
+
+                                return (
+                                  <div
+                                    key={cat}
+                                    className="flex items-center justify-between gap-1.5 p-1.5 rounded-xl bg-white dark:bg-[#0c1019] border border-slate-200/80 dark:border-slate-800 text-xs"
+                                  >
+                                    {isEditing ? (
+                                      <div className="flex items-center gap-1.5 flex-1">
+                                        <input
+                                          type="text"
+                                          value={editingCategoryNewName}
+                                          onChange={(e) => setEditingCategoryNewName(e.target.value)}
+                                          onKeyDown={(e) => {
+                                            if (e.key === "Enter") {
+                                              e.preventDefault();
+                                              handleSaveCategoryRename(cat);
+                                            }
+                                          }}
+                                          className={`flex-1 px-2 py-0.5 rounded-lg border text-xs ${inputClass}`}
+                                          autoFocus
+                                        />
+                                        <button
+                                          type="button"
+                                          onClick={() => handleSaveCategoryRename(cat)}
+                                          disabled={isUpdatingCategory}
+                                          className="px-2 py-0.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px]"
+                                        >
+                                          Save
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => setEditingCategoryOldName(null)}
+                                          className="p-1 opacity-60 hover:opacity-100"
+                                        >
+                                          <X className="w-3.5 h-3.5" />
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <>
+                                        <div className="flex items-center gap-1.5 min-w-0">
+                                          <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">
+                                            {cat}
+                                          </span>
+                                          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 shrink-0">
+                                            {count} {count === 1 ? "item" : "items"}
+                                          </span>
+                                        </div>
+
+                                        <div className="flex items-center gap-0.5 shrink-0">
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setEditingCategoryOldName(cat);
+                                              setEditingCategoryNewName(cat);
+                                            }}
+                                            className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition"
+                                            title={`Rename category "${cat}"`}
+                                          >
+                                            <Edit2 className="w-3 h-3" />
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleDeleteCategory(cat)}
+                                            disabled={isUpdatingCategory}
+                                            className="p-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40 text-slate-400 hover:text-red-500 transition"
+                                            title={`Delete category "${cat}"`}
+                                          >
+                                            <Trash2 className="w-3 h-3" />
+                                          </button>
+                                        </div>
+                                      </>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
                         )}
                       </div>
 

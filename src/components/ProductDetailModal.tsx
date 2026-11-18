@@ -18,7 +18,8 @@ import {
   Wrench,
   Camera,
   Video,
-  Clock
+  Clock,
+  Sparkles
 } from "lucide-react";
 
 interface ProductDetailModalProps {
@@ -103,9 +104,18 @@ Please share custom quotation, studio bay availability & installation schedule.`
         {/* Header Bar */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-[#0a0e18]/80">
           <div className="flex items-center gap-2 text-xs font-mono font-semibold text-slate-500 dark:text-slate-400">
-            <span>{product.brand}</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-            <span>{product.subbrand}</span>
+            {product.brand.toLowerCase() === "universal" ? (
+              <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
+                <Sparkles className="w-3 h-3" />
+                Universal Fit (All Cars)
+              </span>
+            ) : (
+              <>
+                <span>{product.brand}</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+                <span>{product.subbrand}</span>
+              </>
+            )}
             <ChevronRight className="w-3.5 h-3.5" />
             <span className="text-red-500 font-bold">{product.category}</span>
           </div>
@@ -249,9 +259,16 @@ Please share custom quotation, studio bay availability & installation schedule.`
               <div className="space-y-4">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono font-bold text-red-500 uppercase">
-                      {product.brand} • {product.subbrand}
-                    </span>
+                    {product.brand.toLowerCase() === "universal" ? (
+                      <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 uppercase flex items-center gap-1">
+                        <Sparkles className="w-3 h-3" />
+                        Universal Fit (All Cars)
+                      </span>
+                    ) : (
+                      <span className="text-xs font-mono font-bold text-red-500 uppercase">
+                        {product.brand} • {product.subbrand}
+                      </span>
+                    )}
                     <span className="text-slate-400 font-mono text-xs">• SKU: {product.sku}</span>
                   </div>
                   <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white leading-tight">
@@ -267,9 +284,17 @@ Please share custom quotation, studio bay availability & installation schedule.`
                       <span>Guaranteed Vehicle Compatibility</span>
                     </div>
                     <div className="font-mono text-[11px] text-emerald-900/80 dark:text-emerald-300/80">
-                      Precision engineered for {product.brand} {product.subbrand}.
-                      {product.compatibleYears && (
-                        <span> Years: {product.compatibleYears.join(", ")}</span>
+                      {product.brand.toLowerCase() === "universal" ? (
+                        <>
+                          Universal Fitment — Engineered & verified for all car makes, models, and years.
+                        </>
+                      ) : (
+                        <>
+                          Precision engineered for {product.brand} {product.subbrand}.
+                          {product.compatibleYears && (
+                            <span> Years: {product.compatibleYears.join(", ")}</span>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>

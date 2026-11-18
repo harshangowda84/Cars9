@@ -163,9 +163,16 @@ function ProductCardItem({
         <div>
           {/* Vehicle Compatibility & Category */}
           <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 mb-1.5 gap-2">
-            <span className="text-red-600 dark:text-red-400 font-bold uppercase truncate">
-              {item.brand} • {item.subbrand}
-            </span>
+            {item.brand.toLowerCase() === "universal" ? (
+              <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-extrabold uppercase truncate tracking-wider">
+                <Sparkles className="w-3 h-3 shrink-0" />
+                Universal Fit (All Cars)
+              </span>
+            ) : (
+              <span className="text-red-600 dark:text-red-400 font-bold uppercase truncate">
+                {item.brand} • {item.subbrand}
+              </span>
+            )}
             <span className="shrink-0 text-[10px] sm:text-[11px]">{item.category}</span>
           </div>
 
@@ -335,7 +342,10 @@ export function ProductListing({
           {/* Category Pill Tabs (Admin On/Off Controlled) */}
           {settings.plp_showCategoryTabs && (
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-none">
-              {CATEGORIES.map((cat) => (
+              {(Array.isArray(settings.custom_categories) && settings.custom_categories.length > 0 
+                ? ["All", ...settings.custom_categories] 
+                : CATEGORIES
+              ).map((cat) => (
                 <button
                   key={cat}
                   onClick={() => onCategoryChange(cat)}

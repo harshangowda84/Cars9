@@ -200,7 +200,22 @@ export async function DELETE(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
-    const { action, ids, all, brand, category } = body;
+    const { action, ids, all, brand, category, oldCategory, newCategory } = body;
+
+    // Batch rename/reassign category across products
+    if (action === 'update_category' || (oldCategory && newCategory)) {
+      const targetOld = String(oldCategory).trim();
+      const targetNew = String(newCategory).trim();
+      if (!targetOld || !targetNew) {
+        return NextResponse.json({ error: "Missing oldCategory or newCategory" }, { status: 400 });
+      }
+
+      await db.update(parts).set({ category: targetNew }).where(eq(parts.category, targetOld));
+      return NextResponse.json({
+        success: true,
+        message: `Reassigned all items from "${targetOld}" to "${targetNew}"`,
+      });
+    }
 
     if (action === 'restore') {
       const allDeleted = await db.select().from(parts).where(eq(parts.isDeleted, true));

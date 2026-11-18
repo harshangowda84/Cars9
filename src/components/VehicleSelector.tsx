@@ -57,8 +57,13 @@ export function VehicleSelector({
   onSearchChange,
   products = [],
 }: VehicleSelectorProps) {
+  // Filter out any virtual "Universal" entry so only real car manufacturers appear in the selector
+  const visibleBrands = React.useMemo(() => {
+    return brands.filter((b) => b.name.toLowerCase() !== "universal");
+  }, [brands]);
+
   // Current brand object
-  const currentBrandObj = brands.find(
+  const currentBrandObj = visibleBrands.find(
     (b) => b.name.toLowerCase() === selectedBrand.toLowerCase()
   );
 
@@ -139,19 +144,19 @@ export function VehicleSelector({
                 </h2>
               </div>
               <div className="text-[11px] font-mono text-slate-400">
-                Showing {brands.length} Brands
+                Showing {visibleBrands.length} Brands
               </div>
             </div>
 
             {/* Grid of Brand Cards (Balanced & Centered with Zero Waste Space) */}
             <div className={`grid gap-2 sm:gap-3 ${
-              brands.length <= 2 
+              visibleBrands.length <= 2 
                 ? "grid-cols-2 max-w-sm sm:max-w-md mx-auto" 
-                : brands.length <= 4 
+                : visibleBrands.length <= 4 
                   ? "grid-cols-2 sm:grid-cols-4 max-w-3xl mx-auto" 
                   : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6"
             }`}>
-              {brands.map((brand) => {
+              {visibleBrands.map((brand) => {
                 const isSelected = selectedBrand.toLowerCase() === brand.name.toLowerCase();
                 const logoUrl = getBrandLogoUrl(brand);
                 const modelsCount = brand.subbrands ? brand.subbrands.length : 0;

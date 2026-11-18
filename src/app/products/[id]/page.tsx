@@ -26,7 +26,8 @@ import {
   Package,
   Award,
   Plus,
-  Minus
+  Minus,
+  Sparkles
 } from "lucide-react";
 
 export default function ProductDetailPage() {
@@ -129,10 +130,13 @@ export default function ProductDetailPage() {
 
   // WhatsApp Enquiry
   const handleShareWhatsApp = () => {
+    const fitmentText = product.brand.toLowerCase() === "universal"
+      ? "Universal Fit (All Vehicles)"
+      : `${product.brand} ${product.subbrand}`;
     const text = `Hello Cars9 Studio! I am inquiring about:
 *Product:* ${product.name}
 *SKU:* ${product.sku}
-*Vehicle Fitment:* ${product.brand} ${product.subbrand}
+*Vehicle Fitment:* ${fitmentText}
 *Category:* ${product.category}
 Please share custom quotation, studio bay availability & installation schedule.`;
     const targetPhone = (settings.whatsapp_pdp_phone || settings.whatsapp_master_phone || settings.footer_phone || "919000000000").replace(/\D/g, "");
@@ -164,9 +168,18 @@ Please share custom quotation, studio bay availability & installation schedule.`
             <span>Catalog</span>
           </Link>
           <ChevronRight className="w-3.5 h-3.5" />
-          <span className="text-slate-600 dark:text-slate-300 font-semibold">{product.brand}</span>
-          <ChevronRight className="w-3.5 h-3.5" />
-          <span className="text-slate-600 dark:text-slate-300 font-semibold">{product.subbrand}</span>
+          {product.brand.toLowerCase() === "universal" ? (
+            <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
+              <Sparkles className="w-3 h-3" />
+              Universal Fit (All Vehicles)
+            </span>
+          ) : (
+            <>
+              <span className="text-slate-600 dark:text-slate-300 font-semibold">{product.brand}</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+              <span className="text-slate-600 dark:text-slate-300 font-semibold">{product.subbrand}</span>
+            </>
+          )}
           <ChevronRight className="w-3.5 h-3.5" />
           <span className="text-red-500 font-bold truncate max-w-xs">{product.name}</span>
         </div>
@@ -353,11 +366,22 @@ Please share custom quotation, studio bay availability & installation schedule.`
                     <span>Guaranteed Vehicle Compatibility</span>
                   </div>
                   <div className="text-xs text-emerald-900 dark:text-emerald-300 font-mono">
-                    Engineered specifically for: <strong>{product.brand} {product.subbrand}</strong>
-                    {product.compatibleYears && product.compatibleYears.length > 0 && (
-                      <div className="mt-1 text-[11px] text-emerald-800 dark:text-emerald-400">
-                        Compatible Model Years: {product.compatibleYears.join(", ")}
-                      </div>
+                    {product.brand.toLowerCase() === "universal" ? (
+                      <>
+                        Fitment Type: <strong className="text-emerald-600 dark:text-emerald-400">Universal Fit (All Vehicles)</strong>
+                        <div className="mt-1 text-[11px] text-emerald-800 dark:text-emerald-400">
+                          Tested & verified compatible across all vehicle makes, models, and years with standard mounting and OEM coupler integration.
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        Engineered specifically for: <strong>{product.brand} {product.subbrand}</strong>
+                        {product.compatibleYears && product.compatibleYears.length > 0 && (
+                          <div className="mt-1 text-[11px] text-emerald-800 dark:text-emerald-400">
+                            Compatible Model Years: {product.compatibleYears.join(", ")}
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                   <div className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80 pt-1">
