@@ -417,10 +417,25 @@ export default function AdminPortalPage() {
   const [uploadingSlot, setUploadingSlot] = useState<number | null>(null);
   const [uploadingBanner, setUploadingBanner] = useState(false);
 
-  // Check existing session via secure HttpOnly cookie verification
+  // Check existing session via Tab-scoped Session Killer & secure HttpOnly cookie verification
   useEffect(() => {
     async function checkAuth() {
       try {
+        // Session Killer: when the user closes the admin tab, sessionStorage is completely wiped.
+        // Opening admin-portal in a new/reopened tab always forces a fresh login prompt.
+        const isTabSessionActive =
+          typeof window !== "undefined" &&
+          sessionStorage.getItem("cars9_admin_active_tab") === "active";
+
+        if (!isTabSessionActive) {
+          // Tab is fresh or was closed previously. Kill any leftover cookie on server and show login!
+          try {
+            await fetch("/api/auth/logout", { method: "POST" });
+          } catch {}
+          setIsAuthenticated(false);
+          return;
+        }
+
         const res = await fetch("/api/auth/me", { cache: "no-store" });
         if (res.ok) {
           const data = await res.json();
@@ -430,11 +445,16 @@ export default function AdminPortalPage() {
             setActiveTab("enquiries");
             fetchAllData();
           } else {
+            sessionStorage.removeItem("cars9_admin_active_tab");
             setIsAuthenticated(false);
           }
+        } else {
+          sessionStorage.removeItem("cars9_admin_active_tab");
+          setIsAuthenticated(false);
         }
       } catch (err) {
         console.warn("Session verification error:", err);
+        sessionStorage.removeItem("cars9_admin_active_tab");
         setIsAuthenticated(false);
       }
     }
@@ -458,6 +478,7 @@ export default function AdminPortalPage() {
 
       const data = await res.json();
       if (res.ok && data.success) {
+        sessionStorage.setItem("cars9_admin_active_tab", "active");
         setIsAuthenticated(true);
         setAuthRole("admin");
         setActiveTab("enquiries");
@@ -488,6 +509,7 @@ export default function AdminPortalPage() {
 
       const data = await res.json();
       if (res.ok && data.success) {
+        sessionStorage.setItem("cars9_admin_active_tab", "active");
         setIsAuthenticated(true);
         setAuthRole("staff");
         setActiveTab("enquiries");
@@ -503,12 +525,13 @@ export default function AdminPortalPage() {
   };
 
   const handleLogout = async () => {
+    sessionStorage.removeItem("cars9_admin_active_tab");
+    sessionStorage.removeItem("cars9_admin_session");
+    sessionStorage.removeItem("cars9_role");
     try {
       await fetch("/api/auth/logout", { method: "POST" });
     } catch {}
     setIsAuthenticated(false);
-    sessionStorage.removeItem("cars9_admin_session");
-    sessionStorage.removeItem("cars9_role");
     showToastNotice("Signed out of studio portal", "info");
   };
 
@@ -3028,6 +3051,12 @@ Thank you for choosing Cars9 Studio!`;
               </div>
             </form>
           )}
+
+          {/* Session Killer Security Notice */}
+          <div className="pt-3 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-center gap-1.5 text-[10px] font-mono text-slate-400">
+            <Lock className="w-3 h-3 text-red-500 shrink-0" />
+            <span>Session Killer Active • Auto-logout when tab closes</span>
+          </div>
         </div>
       </div>
     );

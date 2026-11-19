@@ -13,13 +13,13 @@ export interface SessionPayload {
 }
 
 /**
- * Creates an encrypted JWT session token valid for 7 days
+ * Creates an encrypted JWT session token valid for 24 hours
  */
 export async function createSessionToken(payload: SessionPayload): Promise<string> {
   return await new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime("7d")
+    .setExpirationTime("24h")
     .sign(key);
 }
 
@@ -65,7 +65,8 @@ export async function getSession(request?: NextRequest | Request): Promise<Sessi
 }
 
 /**
- * Sets the HttpOnly session cookie on a NextResponse
+ * Sets the HttpOnly session cookie on a NextResponse.
+ * Omits maxAge so it acts as an in-memory browser session cookie (cleared when browser/tab session ends).
  */
 export function setSessionCookie(response: NextResponse, token: string): void {
   response.cookies.set({
@@ -75,7 +76,6 @@ export function setSessionCookie(response: NextResponse, token: string): void {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: 7 * 24 * 60 * 60, // 7 days
   });
 }
 
