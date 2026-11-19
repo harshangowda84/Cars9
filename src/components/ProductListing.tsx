@@ -62,10 +62,26 @@ function ProductCardItem({
   // Collect and deduplicate all images for hover slideshow (Daiva Tech pattern)
   const allImages = useMemo(() => {
     const list: string[] = [];
-    if (item.imageUrl) list.push(item.imageUrl);
-    if (item.images && Array.isArray(item.images)) {
-      for (const img of item.images) {
-        if (!list.includes(img)) list.push(img);
+    if (typeof item.imageUrl === "string" && item.imageUrl.trim()) {
+      list.push(item.imageUrl.trim());
+    }
+    const extraImages = Array.isArray(item.images)
+      ? item.images
+      : typeof item.images === "string"
+      ? (() => {
+          try {
+            const p = JSON.parse(item.images);
+            return Array.isArray(p) ? p : [p];
+          } catch {
+            return [item.images];
+          }
+        })()
+      : [];
+
+    for (const img of extraImages) {
+      const clean = typeof img === "string" ? img.trim() : typeof img?.url === "string" ? img.url.trim() : "";
+      if (clean && !list.includes(clean)) {
+        list.push(clean);
       }
     }
     return list.length > 0 ? list : [item.imageUrl || "/images/placeholder.jpg"];

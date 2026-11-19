@@ -29,6 +29,14 @@ export default function GlobalError({
           </p>
         </div>
 
+        {error?.message && (
+          <div className="p-3.5 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs font-mono text-left overflow-x-auto max-h-32">
+            <span className="font-bold block mb-1">Diagnostic Detail:</span>
+            <span>{error.message}</span>
+            {error.digest && <span className="block opacity-60 text-[10px] mt-1">Digest: {error.digest}</span>}
+          </div>
+        )}
+
         <div className="flex flex-col sm:flex-row gap-3">
           <button
             onClick={() => reset()}

@@ -19,7 +19,8 @@ import {
   Camera,
   Video,
   Clock,
-  Sparkles
+  Sparkles,
+  AlertCircle
 } from "lucide-react";
 
 interface ProductDetailModalProps {
@@ -28,7 +29,68 @@ interface ProductDetailModalProps {
   selectedVehicle?: { brand: string; model: string; year: string };
 }
 
-export function ProductDetailModal({ product, onClose, selectedVehicle }: ProductDetailModalProps) {
+interface ModalErrorBoundaryProps {
+  children: React.ReactNode;
+  onClose: () => void;
+  productName?: string;
+}
+
+interface ModalErrorBoundaryState {
+  hasError: boolean;
+  errorMessage: string;
+}
+
+class ModalErrorBoundary extends React.Component<ModalErrorBoundaryProps, ModalErrorBoundaryState> {
+  constructor(props: ModalErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, errorMessage: "" };
+  }
+
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, errorMessage: error?.message || "Unknown rendering exception" };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error("ProductDetailModal caught rendering error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl animate-in fade-in">
+          <div className="max-w-md w-full bg-white dark:bg-[#0f1523] border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 text-center space-y-4 shadow-2xl">
+            <div className="w-12 h-12 rounded-2xl bg-red-500/10 text-red-500 flex items-center justify-center mx-auto border border-red-500/20">
+              <AlertCircle className="w-6 h-6" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-base font-bold">Quick Preview Unavailable</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Could not load media preview for &ldquo;{this.props.productName || "this accessory"}&rdquo;.
+              </p>
+            </div>
+            {this.state.errorMessage && (
+              <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 text-[11px] font-mono text-left overflow-x-auto">
+                {this.state.errorMessage}
+              </div>
+            )}
+            <button
+              onClick={() => {
+                this.setState({ hasError: false, errorMessage: "" });
+                this.props.onClose();
+              }}
+              className="w-full py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase tracking-wider transition"
+            >
+              Close Preview
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+function ProductDetailModalInner({ product, onClose, selectedVehicle }: { product: CarPart; onClose: () => void; selectedVehicle?: { brand: string; model: string; year: string } }) {
   const { addToCart, items } = useCart();
   const { settings } = useSettings();
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
@@ -52,8 +114,8 @@ export function ProductDetailModal({ product, onClose, selectedVehicle }: Produc
 
   const isUniversal = Boolean(product.brand && product.brand.toLowerCase() === "universal");
 
-  // Media gallery: Safely normalize images to array
-  const rawImages = Array.isArray(product.images)
+  // Media gallery: Safely normalize images to array of non-empty URLs
+  const rawImages = (Array.isArray(product.images)
     ? product.images
     : typeof product.images === "string"
     ? (() => {
@@ -64,11 +126,16 @@ export function ProductDetailModal({ product, onClose, selectedVehicle }: Produc
           return [product.images];
         }
       })()
-    : [];
+    : []
+  )
+    .map((img: any) => (typeof img === "string" ? img.trim() : typeof img?.url === "string" ? img.url.trim() : ""))
+    .filter((img: string) => img.length > 0);
 
-  const imageList = rawImages.length > 0 
-    ? rawImages 
-    : [product.imageUrl || "/images/placeholder.jpg"];
+  const fallbackImg = typeof product.imageUrl === "string" && product.imageUrl.trim().length > 0
+    ? product.imageUrl.trim()
+    : "/images/placeholder.jpg";
+
+  const imageList = rawImages.length > 0 ? rawImages : [fallbackImg];
 
   // Total media includes video at the end if available and enabled
   const hasVideo = Boolean(product.videoUrl) && (settings.pdp_showVideoPlayer !== false);
@@ -417,5 +484,15 @@ Please share custom quotation, studio bay availability & installation schedule.`
         onClose={() => setIsShareModalOpen(false)}
       />
     </div>
+  );
+}
+
+export function ProductDetailModal(props: ProductDetailModalProps) {
+  if (!props.product) return null;
+
+  return (
+    <ModalErrorBoundary onClose={props.onClose} productName={props.product?.name}>
+      <ProductDetailModalInner {...props} product={props.product} />
+    </ModalErrorBoundary>
   );
 }
