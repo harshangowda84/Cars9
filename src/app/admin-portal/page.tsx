@@ -470,7 +470,6 @@ export default function AdminPortalPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          username,
           password,
           mode: "admin",
         }),
@@ -486,7 +485,7 @@ export default function AdminPortalPage() {
         showToastNotice("Authenticated as Full Studio Admin", "success");
         fetchAllData();
       } else {
-        setAuthError(data.error || "Invalid admin credentials. Access restricted.");
+        setAuthError(data.error || "Invalid admin password. Access restricted.");
       }
     } catch (err: any) {
       setAuthError(err.message || "Login request failed");
@@ -2997,27 +2996,16 @@ Thank you for choosing Cars9 Studio!`;
             </form>
           )}
 
-          {/* Form 2: Full Admin Login (Username + Password) */}
+          {/* Form 2: Full Admin Login (Password Only) */}
           {loginMode === "admin" && (
             <form onSubmit={handleAdminLogin} className="space-y-4 animate-in fade-in">
-              <div>
-                <label className="block text-xs font-semibold mb-1 opacity-80">
-                  Admin Username *
-                </label>
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Enter admin username..."
-                  className={`w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none ${inputClass}`}
-                  autoFocus
-                  required
-                />
+              <div className="p-3 rounded-2xl bg-red-500/10 border border-red-500/25 text-[11px] text-red-600 dark:text-red-400 font-mono">
+                🛡️ <strong>Master Administrator Access:</strong> Enter the assigned admin password to manage products, pricing, and system settings.
               </div>
 
               <div>
                 <label className="block text-xs font-semibold mb-1 opacity-80">
-                  Admin Security Password *
+                  Master Admin Password *
                 </label>
                 <input
                   type="password"
@@ -3025,6 +3013,7 @@ Thank you for choosing Cars9 Studio!`;
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter admin password..."
                   className={`w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none ${inputClass}`}
+                  autoFocus
                   required
                 />
               </div>

@@ -38,38 +38,30 @@ export async function POST(request: NextRequest) {
     }
 
     if (mode === "admin") {
-      const validUsernames = ["admin", "cars9admin", "root"];
-      const isValidUser = validUsernames.includes(username.toLowerCase().trim());
-      const isValidPass =
-        password === configuredAdminPass ||
-        password === "cars9pass" ||
-        password === "admin123";
+      const isValidPass = password === configuredAdminPass;
 
-      if (!isValidUser || !isValidPass) {
+      if (!isValidPass) {
         return NextResponse.json(
-          { error: "Invalid admin username or password. Access restricted." },
+          { error: "Invalid admin password. Access restricted." },
           { status: 401 }
         );
       }
 
+      const adminUser = (typeof username === "string" && username.trim()) || "Master Admin";
       const token = await createSessionToken({
-        username: username.trim(),
+        username: adminUser,
         role: "admin",
       });
 
       const response = NextResponse.json({
         success: true,
-        user: { username: username.trim(), role: "admin" },
+        user: { username: adminUser, role: "admin" },
       });
 
       setSessionCookie(response, token);
       return response;
     } else if (mode === "staff") {
-      const isValidPass =
-        password === configuredStaffPass ||
-        password === "cars9staff" ||
-        password === "staff123" ||
-        password === "9999";
+      const isValidPass = password === configuredStaffPass;
 
       if (!isValidPass) {
         return NextResponse.json(
