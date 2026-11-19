@@ -211,7 +211,11 @@ function ProductCardItem({
           {settings.plp_showQuickPreview && (
             <button
               type="button"
-              onClick={() => onSelectProduct(item)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onSelectProduct(item);
+              }}
               className="h-9 w-9 shrink-0 rounded-xl border border-slate-200 dark:border-slate-700/80 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition flex items-center justify-center"
               title="Quick Preview"
             >
@@ -223,7 +227,11 @@ function ProductCardItem({
           {settings.plp_showShareButton !== false && (
             <button
               type="button"
-              onClick={() => onShareProduct(item)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onShareProduct(item);
+              }}
               className="h-9 w-9 shrink-0 rounded-xl border border-slate-200 dark:border-slate-700/80 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white flex items-center justify-center"
               title="Share Product"
             >

@@ -50,9 +50,24 @@ export function ProductDetailModal({ product, onClose, selectedVehicle }: Produc
 
   if (!product) return null;
 
-  // Media gallery: 5 to 6 high-res photos
-  const imageList = product.images && product.images.length > 0 
-    ? product.images 
+  const isUniversal = Boolean(product.brand && product.brand.toLowerCase() === "universal");
+
+  // Media gallery: Safely normalize images to array
+  const rawImages = Array.isArray(product.images)
+    ? product.images
+    : typeof product.images === "string"
+    ? (() => {
+        try {
+          const parsed = JSON.parse(product.images);
+          return Array.isArray(parsed) ? parsed : [parsed];
+        } catch {
+          return [product.images];
+        }
+      })()
+    : [];
+
+  const imageList = rawImages.length > 0 
+    ? rawImages 
     : [product.imageUrl || "/images/placeholder.jpg"];
 
   // Total media includes video at the end if available and enabled
@@ -70,10 +85,31 @@ export function ProductDetailModal({ product, onClose, selectedVehicle }: Produc
 
   const isInCart = items.some((i) => i.id === product.id);
 
+  // Safely formatted compatible model years string
+  const compatibleYearsText = Array.isArray(product.compatibleYears)
+    ? product.compatibleYears.join(", ")
+    : typeof product.compatibleYears === "string"
+    ? product.compatibleYears
+    : "";
+
+  // Safely normalized specifications
+  const specsObj: Record<string, string> =
+    typeof product.specifications === "object" && product.specifications !== null && !Array.isArray(product.specifications)
+      ? (product.specifications as Record<string, string>)
+      : typeof product.specifications === "string"
+      ? (() => {
+          try {
+            return JSON.parse(product.specifications);
+          } catch {
+            return {};
+          }
+        })()
+      : {};
+
   const handleShareWhatsApp = () => {
     const vehicleText = selectedVehicle?.brand && selectedVehicle.brand !== "all" 
       ? ` for ${selectedVehicle.brand} ${selectedVehicle.model !== "all" ? selectedVehicle.model : ""} ${selectedVehicle.year !== "all" ? `(${selectedVehicle.year})` : ""}`
-      : ` for ${product.brand} ${product.subbrand}`;
+      : ` for ${product.brand || "Universal"} ${product.subbrand || ""}`.trim();
 
     const text = `Hello Cars9 Studio! I am inquiring about:
 *Product:* ${product.name}
@@ -104,16 +140,16 @@ Please share custom quotation, studio bay availability & installation schedule.`
         {/* Header Bar */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-[#0a0e18]/80">
           <div className="flex items-center gap-2 text-xs font-mono font-semibold text-slate-500 dark:text-slate-400">
-            {product.brand.toLowerCase() === "universal" ? (
+            {isUniversal ? (
               <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
                 <Sparkles className="w-3 h-3" />
                 Universal Fit (All Cars)
               </span>
             ) : (
               <>
-                <span>{product.brand}</span>
+                <span>{product.brand || "Vehicle"}</span>
                 <ChevronRight className="w-3.5 h-3.5" />
-                <span>{product.subbrand}</span>
+                <span>{product.subbrand || "All Models"}</span>
               </>
             )}
             <ChevronRight className="w-3.5 h-3.5" />
@@ -259,14 +295,14 @@ Please share custom quotation, studio bay availability & installation schedule.`
               <div className="space-y-4">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    {product.brand.toLowerCase() === "universal" ? (
+                    {isUniversal ? (
                       <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 uppercase flex items-center gap-1">
                         <Sparkles className="w-3 h-3" />
                         Universal Fit (All Cars)
                       </span>
                     ) : (
                       <span className="text-xs font-mono font-bold text-red-500 uppercase">
-                        {product.brand} • {product.subbrand}
+                        {product.brand || "Vehicle"} {product.subbrand ? `• ${product.subbrand}` : ""}
                       </span>
                     )}
                     <span className="text-slate-400 font-mono text-xs">• SKU: {product.sku}</span>
@@ -284,15 +320,15 @@ Please share custom quotation, studio bay availability & installation schedule.`
                       <span>Guaranteed Vehicle Compatibility</span>
                     </div>
                     <div className="font-mono text-[11px] text-emerald-900/80 dark:text-emerald-300/80">
-                      {product.brand.toLowerCase() === "universal" ? (
+                      {isUniversal ? (
                         <>
                           Universal Fitment — Engineered & verified for all car makes, models, and years.
                         </>
                       ) : (
                         <>
-                          Precision engineered for {product.brand} {product.subbrand}.
-                          {product.compatibleYears && (
-                            <span> Years: {product.compatibleYears.join(", ")}</span>
+                          Precision engineered for {product.brand || "Vehicle"} {product.subbrand || ""}.
+                          {compatibleYearsText && (
+                            <span> Years: {compatibleYearsText}</span>
                           )}
                         </>
                       )}
@@ -305,24 +341,24 @@ Please share custom quotation, studio bay availability & installation schedule.`
                 </p>
 
                 {/* Studio Bay Time (Admin On/Off Controlled) */}
-                {settings.pdp_showBayTimeEstimate !== false && (product.specifications?.["Installation Slot"] || product.specifications?.["bayTime"]) && (
+                {settings.pdp_showBayTimeEstimate !== false && (specsObj["Installation Slot"] || specsObj["bayTime"]) && (
                   <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs font-mono text-amber-800 dark:text-amber-400">
                     <Clock className="w-3.5 h-3.5 shrink-0" />
-                    <span>Estimated Bay Time: {product.specifications["Installation Slot"] || product.specifications["bayTime"]}</span>
+                    <span>Estimated Bay Time: {specsObj["Installation Slot"] || specsObj["bayTime"]}</span>
                   </div>
                 )}
 
                 {/* Specs Pill List (Admin On/Off Controlled) */}
-                {settings.pdp_showSpecsTab !== false && product.specifications && Object.keys(product.specifications).length > 0 && (
+                {settings.pdp_showSpecsTab !== false && Object.keys(specsObj).length > 0 && (
                   <div className="space-y-1.5 pt-2">
                     <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">
                       Technical Highlights
                     </span>
                     <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
-                      {Object.entries(product.specifications).slice(0, 4).map(([k, v]) => (
+                      {Object.entries(specsObj).slice(0, 4).map(([k, v]) => (
                         <div key={k} className="p-2 rounded-xl bg-slate-50 dark:bg-[#161e31] border border-slate-200/80 dark:border-slate-800">
                           <span className="text-slate-400 block text-[9px] uppercase">{k}</span>
-                          <span className="font-bold text-slate-900 dark:text-white truncate block">{v}</span>
+                          <span className="font-bold text-slate-900 dark:text-white truncate block">{String(v)}</span>
                         </div>
                       ))}
                     </div>

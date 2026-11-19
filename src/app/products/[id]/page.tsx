@@ -54,9 +54,29 @@ export default function ProductDetailPage() {
   const slideshowIntervalSec = Math.max(1, Number(settings.pdp_slideshowInterval) || 2);
 
   // Media gallery: 5 to 6 images + 1 video as the final slide
-  const imageList = product?.images && product.images.length > 0 
-    ? product.images 
+  const rawImages = Array.isArray(product?.images)
+    ? product.images
+    : typeof product?.images === "string"
+    ? (() => {
+        try {
+          const parsed = JSON.parse(product.images);
+          return Array.isArray(parsed) ? parsed : [parsed];
+        } catch {
+          return [product.images];
+        }
+      })()
+    : [];
+
+  const imageList = rawImages.length > 0 
+    ? rawImages 
     : [product?.imageUrl || "/images/placeholder.jpg"];
+
+  const isUniversal = Boolean(product?.brand && product.brand.toLowerCase() === "universal");
+  const compatibleYearsText = Array.isArray(product?.compatibleYears)
+    ? product.compatibleYears.join(", ")
+    : typeof product?.compatibleYears === "string"
+    ? product.compatibleYears
+    : "";
 
   const hasVideo = Boolean(product?.videoUrl) && (settings.pdp_showVideoPlayer !== false);
   const isViewingVideo = hasVideo && activeMediaIndex === imageList.length;
@@ -130,9 +150,9 @@ export default function ProductDetailPage() {
 
   // WhatsApp Enquiry
   const handleShareWhatsApp = () => {
-    const fitmentText = product.brand.toLowerCase() === "universal"
+    const fitmentText = isUniversal
       ? "Universal Fit (All Vehicles)"
-      : `${product.brand} ${product.subbrand}`;
+      : `${product.brand || "Vehicle"} ${product.subbrand || ""}`.trim();
     const text = `Hello Cars9 Studio! I am inquiring about:
 *Product:* ${product.name}
 *SKU:* ${product.sku}
@@ -168,16 +188,16 @@ Please share custom quotation, studio bay availability & installation schedule.`
             <span>Catalog</span>
           </Link>
           <ChevronRight className="w-3.5 h-3.5" />
-          {product.brand.toLowerCase() === "universal" ? (
+          {isUniversal ? (
             <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
               <Sparkles className="w-3 h-3" />
               Universal Fit (All Vehicles)
             </span>
           ) : (
             <>
-              <span className="text-slate-600 dark:text-slate-300 font-semibold">{product.brand}</span>
+              <span className="text-slate-600 dark:text-slate-300 font-semibold">{product.brand || "Vehicle"}</span>
               <ChevronRight className="w-3.5 h-3.5" />
-              <span className="text-slate-600 dark:text-slate-300 font-semibold">{product.subbrand}</span>
+              <span className="text-slate-600 dark:text-slate-300 font-semibold">{product.subbrand || "All Models"}</span>
             </>
           )}
           <ChevronRight className="w-3.5 h-3.5" />
@@ -366,7 +386,7 @@ Please share custom quotation, studio bay availability & installation schedule.`
                     <span>Guaranteed Vehicle Compatibility</span>
                   </div>
                   <div className="text-xs text-emerald-900 dark:text-emerald-300 font-mono">
-                    {product.brand.toLowerCase() === "universal" ? (
+                    {isUniversal ? (
                       <>
                         Fitment Type: <strong className="text-emerald-600 dark:text-emerald-400">Universal Fit (All Vehicles)</strong>
                         <div className="mt-1 text-[11px] text-emerald-800 dark:text-emerald-400">
@@ -375,10 +395,10 @@ Please share custom quotation, studio bay availability & installation schedule.`
                       </>
                     ) : (
                       <>
-                        Engineered specifically for: <strong>{product.brand} {product.subbrand}</strong>
-                        {product.compatibleYears && product.compatibleYears.length > 0 && (
+                        Engineered specifically for: <strong>{product.brand || "Vehicle"} {product.subbrand || ""}</strong>
+                        {compatibleYearsText && (
                           <div className="mt-1 text-[11px] text-emerald-800 dark:text-emerald-400">
-                            Compatible Model Years: {product.compatibleYears.join(", ")}
+                            Compatible Model Years: {compatibleYearsText}
                           </div>
                         )}
                       </>
