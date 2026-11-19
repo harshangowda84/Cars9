@@ -122,10 +122,11 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Security: Never leak passwords to public storefront visitors
+    // Security: Never leak passwords or security audit logs to public storefront visitors
     if (!session || session.role !== "admin") {
       delete settings.admin_password;
       delete settings.staff_password;
+      delete settings.admin_login_history;
     }
 
     return NextResponse.json(settings, {
